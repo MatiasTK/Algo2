@@ -131,6 +131,47 @@ void dadosVariosArchivos_puedoAgregarlosTodosAlMismoHospital(){
     hospital_destruir(h);
 }
 
+void DadoUnArchivoConXEntrenador_SeAgregaElEntrenadorYSusPokemonAlHospital(){
+    hospital_t* h=hospital_crear();
+    hospital_t* hl = hospital_crear();
+    hospital_t* h1=hospital_crear();
+    hospital_t* h2=hospital_crear();
+
+    pa2m_afirmar(hospital_leer_archivo(h,"ejemplos/no_existe.hospital") == false,"No puedo leer un archivo que no existe");
+    pa2m_afirmar(hospital_leer_archivo(h1,"ejemplos/test_corto.hospital"),"Puedo leer un archivo con varios entrenadores");
+    pa2m_afirmar(hospital_leer_archivo(h2,"ejemplos/test2.hospital"),"Puedo leer un archivo con varios entrenadores en otro hospital");
+    pa2m_afirmar(hospital_leer_archivo(hl,"ejemplos/test.hospital"),"Puedo leer un archivo con strings largas");
+
+    pa2m_afirmar(hospital_cantidad_entrenadores(h1)==8, "El hospital 1 tiene 8 entrenadores");
+    pa2m_afirmar(hospital_cantidad_pokemon(h1)==30, "El hospital 1 tiene 30 pokemon");
+
+    pa2m_afirmar(hospital_cantidad_entrenadores(h2)==5, "El hospital 2 tiene 5 entrenadores");
+    pa2m_afirmar(hospital_cantidad_pokemon(h2)==24, "El hospital 2 tiene 24 pokemon");
+
+    pa2m_afirmar(hospital_cantidad_entrenadores(hl)==8, "El hospital de string largas tiene 8 entrenadores");
+    pa2m_afirmar(hospital_cantidad_pokemon(hl)==30, "El hospital de string largas tiene 30 pokemon");
+
+    resetear_acumulados();
+    pa2m_afirmar(hospital_a_cada_pokemon(h1, NULL)==0, "Recorrer los pokemon con funcion NULL resulta 0 pokemon recorridos");
+
+    resetear_acumulados();
+    pa2m_afirmar(hospital_a_cada_pokemon(h1, acumular_pokemon_hasta_miltank)==18, "Recorrer los pokemon del hospital 1 hasta miltank resulta en 18 pokemon recorridos");
+    pa2m_afirmar(acumulados_en_orden_correcto(), "Los pokemon se recorrieron en orden alfabetico");
+
+    resetear_acumulados();
+    pa2m_afirmar(hospital_a_cada_pokemon(h2, acumular_pokemon_hasta_miltank)==13, "Recorrer los pokemon del hospital 2 hasta miltank resulta en 13 pokemon recorridos");
+    pa2m_afirmar(acumulados_en_orden_correcto(), "Los pokemon se recorrieron en orden alfabetico");
+
+    resetear_acumulados();
+    pa2m_afirmar(hospital_a_cada_pokemon(hl, acumular_pokemon)==30, "Recorrer los pokemon del hospital de string largas resulta en 30 pokemon recorridos");
+    pa2m_afirmar(acumulados_en_orden_correcto(), "Los pokemon se recorrieron en orden alfabetico");
+
+    hospital_destruir(h); 
+    hospital_destruir(h1);
+    hospital_destruir(h2);
+    hospital_destruir(hl); 
+}
+
 int main(){
 
     pa2m_nuevo_grupo("Pruebas de  creación y destrucción");
@@ -150,6 +191,10 @@ int main(){
 
     pa2m_nuevo_grupo("Pruebas con mas de un archivo");
     dadosVariosArchivos_puedoAgregarlosTodosAlMismoHospital();
+
+    //Testing
+    pa2m_nuevo_grupo("Pruebas extras");
+    DadoUnArchivoConXEntrenador_SeAgregaElEntrenadorYSusPokemonAlHospital();
 
     return pa2m_mostrar_reporte();
 }

@@ -2,14 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-size_t contar_separador(const char* string,char separador){
+size_t contar_separador(const char* string,char separador,int len){
     size_t contador = 0;
-    size_t i = 0;
-    while(string[i] != '\0'){
+    for(int i = 0; i < len;i++){
         if(string[i] == separador){
             contador++;
         }
-        i++;
     }
     return contador;
 }
@@ -46,25 +44,25 @@ char** split(const char* string,char separador){
         return NULL;
     }
 
-    size_t ocurrencias = contar_separador(string,separador);
-    size_t cantidad_substrings = ocurrencias+1;
+    int string_len = (int)strlen(string);
+    size_t contador = contar_separador(string,separador,string_len);
+    size_t substrings = contador+1;
 
-    char** vector = calloc(cantidad_substrings+1,sizeof(void*));
+    char** vector = calloc(substrings+1,sizeof(void*));
     if(!vector){
         return NULL;
     }
 
-    for(size_t n = 0; n < cantidad_substrings;n++){
+
+    for(size_t i = 0; i < substrings;i++){
         size_t tamanio_substring = buscar_proximo_separador(string,separador);
         char* substring = duplicar_string(string,tamanio_substring);
-
         if(!substring){
             liberar_todo(vector);
             return NULL;
         }
-
-        vector[n] = substring;
-        string += tamanio_substring+1;
+        vector[i] = substring;
+        string += tamanio_substring + 1;
     }
 
     return vector;

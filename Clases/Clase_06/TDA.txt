@@ -1,0 +1,8 @@
+Tipos de datos abstractos!
+
+Que hace cada dato abstracto -> Caja negra
+Como lo hace -> Caja blanca
+
+Se usan para manejar la asbtraccion -> hacemos mas sencillo el problema
+Sirve para privatizar los datos
+Es mas facil para detectar errores ya que fuerza la modularizacion
