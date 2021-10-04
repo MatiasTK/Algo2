@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #define SEPARADOR ';'
-#define TAM_BUFFER_INI 512
+#define BUFFER_INICIAL 512
 
 struct _hospital_pkm_t{
     size_t cantidad_pokemon;
@@ -67,8 +67,8 @@ char* strdup(const char* string){
 * POST: Lee la linea de un archivo y devuelve un puntero hacia el string de esa linea
 */
 char* leer_linea(FILE* archivo){
-    size_t bytes_leidos= 0;
-    size_t tam_buffer = TAM_BUFFER_INI;
+    size_t bytes_leidos = 0;
+    size_t tam_buffer = BUFFER_INICIAL;
 
     char* buffer = malloc(sizeof(char) * tam_buffer);
     if (!buffer){
@@ -80,13 +80,13 @@ char* leer_linea(FILE* archivo){
         if (leido > 0 && *(buffer + bytes_leidos + leido - 1) == '\n'){
             return buffer;
         }else{
-            char* auxiliar = realloc(buffer, sizeof(char) * tam_buffer + TAM_BUFFER_INI);
+            char* auxiliar = realloc(buffer, sizeof(char) * tam_buffer + BUFFER_INICIAL);
             if(!auxiliar) {
                 free(buffer);
                 return NULL;
             }
             buffer = auxiliar;
-            tam_buffer += TAM_BUFFER_INI;
+            tam_buffer += BUFFER_INICIAL;
         }
         bytes_leidos += leido;
     }
@@ -172,7 +172,7 @@ bool hospital_leer_archivo(hospital_t* hospital, const char* nombre_archivo){
         return false;
     }
     
-    FILE* archivo = fopen(nombre_archivo,"r");
+    FILE* archivo = fopen(nombre_archivo,"r"); 
     if(!archivo){
         return false;
     }
@@ -236,7 +236,8 @@ void hospital_destruir(hospital_t* hospital){
     if(!hospital){
         return;
     }
-    for(int i = 0; i < hospital_cantidad_pokemon(hospital);i++){
+    size_t tope = hospital_cantidad_pokemon(hospital);
+    for(int i = 0; i < tope;i++){
         free(hospital->vector_pokemones[i].nombre);
     }
     free(hospital->vector_pokemones);

@@ -1,6 +1,5 @@
-make all --print-data-base --no-builtin-variables --no-builtin-rules --question
-make: *** No rule to make target 'all'.  Stop.
- 
+/usr/bin/make all -f "/usr/bin/make" -C "/home/matias/programacion/TP1/archivos" --print-data-base --no-builtin-variables --no-builtin-rules --question
+# make: Entering directory '/home/matias/programacion/TP1/archivos'
 # GNU Make 4.2.1
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
@@ -8,7 +7,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Fri Sep 24 07:56:57 2021
+# Make data base, printed on Fri Oct  1 09:16:18 2021
 
 # Variables
 
@@ -31,16 +30,16 @@ VSCODE_LOG_NATIVE = false
 # automatic
 @F = $(notdir $@)
 # makefile
-CURDIR := /home/matias/programacion
+CURDIR := /home/matias/programacion/TP1/archivos
 # makefile
 SHELL = /bin/sh
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en","availableLanguages":{}}
 # environment
 _ = /home/matias/.vscode-server/bin/7f6ab5485bbc008386c4386d08766667e155244e/node
-# makefile
-MAKEFILE_LIST := 
-# 'override' directive
+# makefile (from '/usr/bin/make', line 1)
+MAKEFILE_LIST :=  /usr/bin/make
+# environment
 GNUMAKEFLAGS := 
 # environment
 XDG_DATA_DIRS = /usr/local/share:/usr/share:/var/lib/snapd/desktop
@@ -57,7 +56,7 @@ PATH = /home/matias/.vscode-server/bin/7f6ab5485bbc008386c4386d08766667e155244e/
 # environment
 VSCODE_LOG_STACK = false
 # environment
-VSCODE_IPC_HOOK_CLI = /tmp/vscode-ipc-8ac9aaff-0cce-4a48-a6fc-0cf9b561d5e0.sock
+VSCODE_IPC_HOOK_CLI = /tmp/vscode-ipc-ef1e62f1-615a-47b7-8f2a-3fa091db2c76.sock
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # environment
@@ -71,7 +70,7 @@ PWD = /home/matias/programacion
 # default
 .LOADED := 
 # environment
-WSL_INTEROP = /run/WSL/13_interop
+WSL_INTEROP = /run/WSL/6340_interop
 # environment
 VSCODE_AMD_ENTRYPOINT = vs/server/remoteExtensionHostProcess
 # environment
@@ -107,15 +106,15 @@ NAME = DESKTOP-T31HCKV
 # environment
 VSCODE_WSL_EXT_LOCATION = /mnt/c/Users/Mati/.vscode/extensions/ms-vscode-remote.remote-wsl-0.58.2
 # default
-MAKE_COMMAND := make
+MAKE_COMMAND := /usr/bin/make
 # default
 .VARIABLES := 
 # automatic
 *F = $(notdir $*)
 # makefile
-MAKEFLAGS = pqrR
+MAKEFLAGS = pqrRw
 # environment
-MFLAGS = -pqrR
+MFLAGS = -pqrRw
 # automatic
 *D = $(patsubst %/,%,$(dir $*))
 # automatic
@@ -149,7 +148,7 @@ VSCODE_EXTHOST_WILL_SEND_SOCKET = true
 # environment
 WSL_DISTRO_NAME = Ubuntu
 # variable set hash-table stats:
-# Load=68/1024=7%, Rehash=0, Collisions=4/90=4%
+# Load=68/1024=7%, Rehash=0, Collisions=4/81=5%
 
 # Pattern-specific Variable Values
 
@@ -157,9 +156,8 @@ WSL_DISTRO_NAME = Ubuntu
 
 # Directories
 
-# . (device 2064, inode 40741): 14 files, no impossibilities.
 
-# 14 files, no impossibilities in 1 directories.
+# No files, no impossibilities in 0 directories.
 
 # Implicit Rules
 
@@ -170,23 +168,9 @@ WSL_DISTRO_NAME = Ubuntu
 # Not a target:
 all:
 #  Command line target.
-#  Implicit rule search has been done.
-#  File does not exist.
+#  Implicit rule search has not been done.
+#  Modification time never checked.
 #  File has not been updated.
-
-# Not a target:
-Makefile:
-#  Implicit rule search has been done.
-#  File does not exist.
-#  File has been updated.
-#  Failed to be updated.
-
-# Not a target:
-makefile:
-#  Implicit rule search has been done.
-#  File does not exist.
-#  File has been updated.
-#  Failed to be updated.
 
 # Not a target:
 .DEFAULT:
@@ -195,26 +179,29 @@ makefile:
 #  File has not been updated.
 
 # Not a target:
-GNUmakefile:
-#  Implicit rule search has been done.
-#  File does not exist.
-#  File has been updated.
-#  Failed to be updated.
+/usr/bin/make:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
 
 # files hash-table stats:
-# Load=6/1024=1%, Rehash=0, Collisions=0/15=0%
+# Load=4/1024=0%, Rehash=0, Collisions=0/5=0%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 22 / storage = 186 B / avg = 8 B
-# current buf: size = 8162 B / used = 186 B / count = 22 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 7 / storage = 108 B / avg = 15 B
+# current buf: size = 8162 B / used = 108 B / count = 7 / avg = 15 B
 
-# strcache performance: lookups = 25 / hit rate = 12%
+# strcache performance: lookups = 10 / hit rate = 30%
 # hash-table stats:
-# Load=22/8192=0%, Rehash=0, Collisions=1/25=4%
-# Finished Make data base on Fri Sep 24 07:56:57 2021
+# Load=7/8192=0%, Rehash=0, Collisions=0/10=0%
+# Finished Make data base on Fri Oct  1 09:16:18 2021
 
+# make: Leaving directory '/home/matias/programacion/TP1/archivos'
+ 
+/usr/bin/make:1: warning: NUL character seen; rest of line ignored
+/usr/bin/make:1: *** missing separator.  Stop.
  

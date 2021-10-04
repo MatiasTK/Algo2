@@ -1,6 +1,8 @@
-make --dry-run --always-make --keep-going --print-directory
-make: Entering directory '/home/matias/programacion'
-make: Leaving directory '/home/matias/programacion'
+/usr/bin/make all -f "/usr/bin/make" -C "/home/matias/programacion/TP1/archivos" --dry-run --keep-going --print-directory
+make: Entering directory '/home/matias/programacion/TP1/archivos'
  
-make: *** No targets specified and no makefile found.  Stop.
+/usr/bin/make:1: warning: NUL character seen; rest of line ignored
+/usr/bin/make:1: *** missing separator.  Stop.
+ 
+make: Leaving directory '/home/matias/programacion/TP1/archivos'
  

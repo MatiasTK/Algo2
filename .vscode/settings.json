@@ -5,5 +5,10 @@
         "stdlib.h": "c",
         "split.h": "c"
     },
-    "C_Cpp.errorSquiggles": "Disabled"
+    "C_Cpp.errorSquiggles": "Disabled",
+    "makefile.configurations": [
+        {
+            "name": "Unnamed configuration 1"
+        }
+    ]
 }
