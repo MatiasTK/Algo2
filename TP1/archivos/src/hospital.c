@@ -7,6 +7,12 @@
 #define SEPARADOR ';'
 #define BUFFER_INICIAL 512
 
+#define ERROR false
+#define EXITO true
+
+#define POSICION_ID_ENTRENADOR 0
+#define POSICION_NOMBRE_ENTRENADOR 1
+
 struct _hospital_pkm_t{
     size_t cantidad_pokemon;
     pokemon_t* vector_pokemones;
@@ -31,38 +37,12 @@ pokemon_t* bubble_sort(hospital_t* hospital, int tope){
                 hospital->vector_pokemones[j] = hospital->vector_pokemones[j+1];
                 hospital->vector_pokemones[j+1] = aux;
             }
-        }   
+        }
     }
     return hospital->vector_pokemones;
 }
 
-/*
-* PRE: String debe ser un string valido
-* POST: Devuelve un puntero que es una copia del string recibido
-*/
-char* strdup(const char* string){
-    size_t longitud;
-    int i;
-    char* copia;
-
-    i = 0;
-    longitud = strlen(string);
-    copia = malloc((longitud+1)*sizeof(char));
-
-    if(copia == NULL){
-        return NULL;
-    }
-
-    i = 0;
-    while(i < longitud){
-        copia[i] = string[i];
-        i++;
-    }
-    copia[longitud] = '\0';
-    return copia;
-}
-
-/*
+/* 
 * PRE: Archivo debe ser un archivo valido
 * POST: Lee la linea de un archivo y devuelve un puntero hacia el string de esa linea
 */
@@ -90,8 +70,8 @@ char* leer_linea(FILE* archivo){
         }
         bytes_leidos += leido;
     }
-
-    if(bytes_leidos == 0) {
+    
+    if(bytes_leidos == 0){
         free(buffer);
         return NULL;
     }
@@ -121,13 +101,10 @@ hospital_t* hospital_crear(){
 * POST: Agrega el pokemon al vector y aumenta la cantidad de pokemones
 */
 void agregar_pokemon(hospital_t* hospital,char** linea_split, pokemon_t* vector,int posicion){
-    char* nombre = strdup(linea_split[posicion]);
-    char* nivel = strdup(linea_split[posicion+1]);
     hospital->vector_pokemones = vector;
-    hospital->vector_pokemones[hospital->cantidad_pokemon].nombre = nombre;
-    hospital->vector_pokemones[hospital->cantidad_pokemon].nivel = (size_t)atoi(nivel);
+    hospital->vector_pokemones[hospital->cantidad_pokemon].nombre = linea_split[posicion];
+    hospital->vector_pokemones[hospital->cantidad_pokemon].nivel = (size_t)atoi(linea_split[posicion+1]);
     hospital->cantidad_pokemon++;
-    free(nivel);
 }
 
 /*
@@ -138,8 +115,7 @@ bool buscar_y_agregar_pokemon(hospital_t* hospital,char* linea,pokemon_t* vector
     char** linea_split;
     linea_split = split(linea,SEPARADOR);
     if(!linea_split){
-        free(linea);
-        return false;
+        return ERROR;
     }
     int len = split_len(linea_split);
     for(int i = 2; i <= len;i++){
@@ -149,55 +125,67 @@ bool buscar_y_agregar_pokemon(hospital_t* hospital,char* linea,pokemon_t* vector
                 pokemon_t* vector_aux = NULL;
                 vector_aux = realloc(hospital->vector_pokemones,sizeof(pokemon_t) * (size));
                 if(!vector_aux){
-                    free(linea);
                     free(linea_split);
-                    return false;
+                    return ERROR;
                 }
                 vector = vector_aux;
             }
             agregar_pokemon(hospital,linea_split,vector,i);
         }
     }
-    hospital->cantidad_entrenador++; 
-    for(int i = 0; i <= len; i++){
-        free(linea_split[i]);
+    hospital->cantidad_entrenador++;
+    free(linea_split[POSICION_ID_ENTRENADOR]);
+    free(linea_split[POSICION_NOMBRE_ENTRENADOR]); 
+    for(int i = 2; i <= len; i++){
+        if(i % 2 == 0){
+            free(linea_split[i+1]);
+        }
     } 
     free(linea_split); 
-    free(linea);
-    return true;
+    return EXITO;
 }
 
 bool hospital_leer_archivo(hospital_t* hospital, const char* nombre_archivo){
     if(!hospital){
-        return false;
+        return ERROR;
     }
     
     FILE* archivo = fopen(nombre_archivo,"r"); 
     if(!archivo){
-        return false;
+        return ERROR;
+    }else{
+        int is_empty = fgetc(archivo);
+        if(is_empty == EOF){
+            fclose(archivo);
+            return EXITO;
+        }
+        ungetc(is_empty,archivo);
     }
 
     char* linea = leer_linea(archivo);
     if(!linea){
+        free(linea);
         fclose(archivo);
-        return true;
+        return ERROR;
     }
     size_t size = (hospital->cantidad_pokemon + 1);
     pokemon_t* vector = realloc(hospital->vector_pokemones,sizeof(pokemon_t) * (size));
     if(!vector){
         free(linea);
         fclose(archivo);
-        return false;
+        return ERROR;
     }
     while(linea){
-        if(buscar_y_agregar_pokemon(hospital,linea,vector,size) == false){
+        if(buscar_y_agregar_pokemon(hospital,linea,vector,size) == ERROR){
+            free(linea);
             fclose(archivo);
-            return false;
+            return ERROR;
         }
+        free(linea);
         linea = leer_linea(archivo);
     }
     fclose(archivo);
-    return true;
+    return EXITO;
 }
 
 size_t hospital_cantidad_pokemon(hospital_t* hospital){
@@ -222,7 +210,7 @@ size_t hospital_a_cada_pokemon(hospital_t* hospital, bool (*funcion)(pokemon_t* 
     size_t tope = hospital_cantidad_pokemon(hospital);
     pokemon_t* vector_ordenado = bubble_sort(hospital,(int)tope);
     for(int i = 0; i < tope; i++){
-        if(funcion(vector_ordenado) == false){
+        if(funcion(vector_ordenado) == ERROR){
             contador++;
             return contador;
         }

@@ -133,7 +133,7 @@ void dadosVariosArchivos_puedoAgregarlosTodosAlMismoHospital(){
 
 void DadoUnArchivoConXEntrenador_SeAgregaElEntrenadorYSusPokemonAlHospital(){
     hospital_t* h=hospital_crear();
-    hospital_t* hl = hospital_crear();
+    hospital_t* hl=hospital_crear();
     hospital_t* h1=hospital_crear();
     hospital_t* h2=hospital_crear();
 
@@ -167,14 +167,14 @@ void DadoUnArchivoConXEntrenador_SeAgregaElEntrenadorYSusPokemonAlHospital(){
     pa2m_afirmar(acumulados_en_orden_correcto(), "Los pokemon se recorrieron en orden alfabetico");
 
     hospital_destruir(h); 
+    hospital_destruir(hl);
     hospital_destruir(h1);
     hospital_destruir(h2);
-    hospital_destruir(hl); 
 }
 
 int main(){
 
-    pa2m_nuevo_grupo("Pruebas de  creación y destrucción");
+    pa2m_nuevo_grupo("Pruebas de creación y destrucción");
     puedoCrearYDestruirUnHospital();
 
     pa2m_nuevo_grupo("Pruebas con NULL");
@@ -192,9 +192,9 @@ int main(){
     pa2m_nuevo_grupo("Pruebas con mas de un archivo");
     dadosVariosArchivos_puedoAgregarlosTodosAlMismoHospital();
 
-    //Testing
+    //! Testing
     pa2m_nuevo_grupo("Pruebas extras");
-    DadoUnArchivoConXEntrenador_SeAgregaElEntrenadorYSusPokemonAlHospital();
+    DadoUnArchivoConXEntrenador_SeAgregaElEntrenadorYSusPokemonAlHospital(); 
 
     return pa2m_mostrar_reporte();
 }

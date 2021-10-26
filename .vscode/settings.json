@@ -3,12 +3,8 @@
         "string.h": "c",
         "stdio.h": "c",
         "stdlib.h": "c",
-        "split.h": "c"
+        "split.h": "c",
+        "typeinfo": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled",
-    "makefile.configurations": [
-        {
-            "name": "Unnamed configuration 1"
-        }
-    ]
 }
