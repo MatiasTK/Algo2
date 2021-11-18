@@ -1,0 +1,3 @@
+Pikachu;9;2;3;2
+Bulbasaur;0;5;10;1
+Charmander;3;3;10;10

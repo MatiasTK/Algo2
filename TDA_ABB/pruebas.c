@@ -14,11 +14,26 @@ int comparar_enteros(void* elemento1, void* elemento2){
 
 /*
 * PRE:
+* POST: Devuelve el resutlado de comparar dos strings usando la funcion strcmp.
+*/
+int comparar_strings(void* elemento_1,void* elemento_2){
+    return strcmp(*(char**)elemento_1,*(char**)elemento_2);
+}
+
+/*
+* PRE:
 * POST: Destruye el elemento recibido seteandolo como NULL.
 */
-//TODO: Comprobar si realmente el destructor tiene que hacer esto o hacer algun free de algo, yo creo que no.
 void destructor(void* elemento){
     elemento = NULL;
+}
+
+/*
+* PRE:
+* POST: Libera la memoria reservada para el elemento recibido.
+*/
+void destructor_string(void* elemento){
+    free(elemento);
 }
 
 /*
@@ -36,8 +51,11 @@ bool visitar_todos_elementos(void* elemento_1, void* extra){
 * POST: Imprime por pantalla los elementos de un nodo y asi poder chequear si estan ordenados, devuelve false si encuentra el entero 3 en caso contrario devuelve true.
 */
 bool visitar_hasta_3(void* elemento_1, void* extra){
-    if(*(int*)elemento_1 == 3)
+    if(*(int*)elemento_1 == 3){
+        printf("%d\n", *(int*)elemento_1);
+        (*(int*)extra)++;
         return false;
+    }
     printf("%d\n", *(int*)elemento_1);
     (*(int*)extra)++;
     return true;
@@ -505,8 +523,8 @@ void DadoUnABBLLeno_PuedoIterarHastaFalse_Inorder(){
     int contador = 0;
 
     pa2m_afirmar(abb_tamanio(abb)==4,"Dado un abb vacio nuevo puedo insertar los elementos 3 - 1 - 2 - 4 en el ABB");
-    pa2m_afirmar(abb_con_cada_elemento(abb,INORDEN,visitar_hasta_3,&contador)==2,"Puedo iterar un abb lleno y recorrer todos sus elementos hasta que la funcion devuelva false con el metodo Inorder");
-    pa2m_afirmar(contador==2,"El parametro auxiliar es igual a la cantidad de veces que itero");
+    pa2m_afirmar(abb_con_cada_elemento(abb,INORDEN,visitar_hasta_3,&contador)==3,"Puedo iterar un abb lleno y recorrer todos sus elementos hasta que la funcion devuelva false con el metodo Inorder");
+    pa2m_afirmar(contador==3,"El parametro auxiliar es igual a la cantidad de veces que itero");
 
     abb_destruir(abb);
 }
@@ -523,8 +541,8 @@ void DadoUnABBLLeno_PuedoIterarHastaFalse_Preorder(){
     int contador = 0;
 
     pa2m_afirmar(abb_tamanio(abb)==4,"Dado un abb vacio nuevo puedo insertar los elementos 3 - 1 - 2 - 4 en el ABB");
-    pa2m_afirmar(abb_con_cada_elemento(abb,PREORDEN,visitar_hasta_3,&contador)==0,"Puedo iterar un abb lleno y recorrer todos sus elementos hasta que la funcion devuelva false con el metodo Preorder");
-    pa2m_afirmar(contador==0,"El parametro auxiliar es igual a la cantidad de veces que itero");
+    pa2m_afirmar(abb_con_cada_elemento(abb,PREORDEN,visitar_hasta_3,&contador)==1,"Puedo iterar un abb lleno y recorrer todos sus elementos hasta que la funcion devuelva false con el metodo Preorder");
+    pa2m_afirmar(contador==1,"El parametro auxiliar es igual a la cantidad de veces que itero");
 
     abb_destruir(abb);
 }
@@ -541,8 +559,8 @@ void DadoUnABBLLeno_PuedoIterarHastaFalse_Postorder(){
     int contador = 0;
 
     pa2m_afirmar(abb_tamanio(abb)==4,"Dado un abb vacio nuevo puedo insertar los elementos 3 - 1 - 2 - 4 en el ABB");
-    pa2m_afirmar(abb_con_cada_elemento(abb,POSTORDEN,visitar_hasta_3,&contador)==3,"Puedo iterar un abb lleno y recorrer todos sus elementos hasta que la funcion devuelva false con el metodo Postorder");
-    pa2m_afirmar(contador==3,"El parametro auxiliar es igual a la cantidad de veces que itero");
+    pa2m_afirmar(abb_con_cada_elemento(abb,POSTORDEN,visitar_hasta_3,&contador)==4,"Puedo iterar un abb lleno y recorrer todos sus elementos hasta que la funcion devuelva false con el metodo Postorder");
+    pa2m_afirmar(contador==4,"El parametro auxiliar es igual a la cantidad de veces que itero");
 
     abb_destruir(abb);
 }
@@ -694,34 +712,51 @@ void DadoUnABBLLeno_puedoIterarConIteradorExterno_Postorder(){
     abb_destruir(abb);
 }
 
-bool visitar_hasta_5(void* elemento, void* extra){
-    if(*(int*)elemento == 5){
-        return false;
+void  DadoUnABBLLeno_PuedoIterarConIteradorInternoYStringsEnHeap(){
+    char** elemento_1 = calloc(1,sizeof(char*) * 10);
+    char** elemento_2 = calloc(1,sizeof(char*) * 10);
+    char** elemento_3 = calloc(1,sizeof(char*) * 10);
+    char** elemento_4 = calloc(1,sizeof(char*) * 10);
+    char** elemento_5 = calloc(1,sizeof(char*) * 10);
+
+    *elemento_1 = "Carlos";
+    *elemento_2 = "Ana";
+    *elemento_3 = "Benja";
+    *elemento_4 = "Daniel";
+    *elemento_5 = "Esteban";
+
+    abb_t* abb = abb_crear(comparar_strings);
+
+    abb_insertar(abb,elemento_1);
+    abb_insertar(abb,elemento_2);
+    abb_insertar(abb,elemento_3);
+    abb_insertar(abb,elemento_4);
+    abb_insertar(abb,elemento_5);
+
+    char** array_inorden[5];
+    char** array_preorden[5];
+    char** array_postorden[5];
+
+    char* array_inorden_esperado[5] = {"Ana","Benja","Carlos","Daniel","Esteban"};
+    char* array_preorden_esperado[5] = {"Carlos","Ana","Benja","Daniel","Esteban"};
+    char* array_postorden_esperado[5] = {"Benja","Ana","Esteban","Daniel","Carlos"};
+
+
+    pa2m_afirmar(abb_tamanio(abb)==5,"Dado un abb vacio nuevo puedo insertar los elementos Jorge - Juan - Pedro - Pablo - Matias en el ABB");
+    
+    pa2m_afirmar(abb_recorrer(abb,INORDEN,(void**)array_inorden,5)==5,"Se recorre todo el arbol completo de forma INORDEN");
+
+    pa2m_afirmar(abb_recorrer(abb,PREORDEN,(void**)array_preorden,5)==5,"Se recorre todo el arbol completo de forma PREORDEN");
+    
+    pa2m_afirmar(abb_recorrer(abb,POSTORDEN,(void**)array_postorden,5)==5,"Se recorre todo el arbol completo de forma POSTORDEN");
+
+    for(size_t i = 0; i < 5; i++){
+        printf("\nPosicion numero -> %li\n",i);
+        pa2m_afirmar(strcmp(*(char**)array_inorden[i],array_inorden_esperado[i])==0,"El elemento del array INORDEN es el correcto");
+        pa2m_afirmar(strcmp(*(char**)array_preorden[i],array_preorden_esperado[i])==0,"El elemento del array PREORDEN es el correcto");
+        pa2m_afirmar(strcmp(*(char**)array_postorden[i],array_postorden_esperado[i])==0,"El elemento del array POSTORDEN es el correcto");
     }
-    printf("%d\n",*(int*)elemento);
-    (*(int*)extra)++;
-    return true;
-}
-
-void DadoUnABBLleno_PuedoIterarHasta5_Postorder(){
-    abb_t* abb = abb_crear(comparar_enteros);
-    int elemento_1 = 3, elemento_2 = 1, elemento_3 = 5, elemento_4 = 15, elemento_5 = 0, elemento_6 = 9, elemento_7 = 7, elemento_8 = 4;
-
-    abb_insertar(abb,&elemento_1);
-    abb_insertar(abb,&elemento_2);
-    abb_insertar(abb,&elemento_3);
-    abb_insertar(abb,&elemento_4);
-    abb_insertar(abb,&elemento_5);
-    abb_insertar(abb,&elemento_6);
-    abb_insertar(abb,&elemento_7);
-    abb_insertar(abb,&elemento_8);
-
-    int contador = 0;
-
-    pa2m_afirmar(abb_tamanio(abb)==8,"Dado un abb vacio nuevo puedo insertar los elementos 3 - 1 - 5 - 15 - 0 - 9 - 7 - 4 en el ABB");
-    pa2m_afirmar(abb_con_cada_elemento(abb,POSTORDEN,visitar_hasta_5,&contador)==7,"Dado un abb lleno puedo recorrer con postorder hasta encontrar el anteultimo (5)");
-
-    abb_destruir(abb);
+    abb_destruir_todo(abb,destructor_string);
 }
 
 int main(){
@@ -773,11 +808,8 @@ int main(){
     DadoUnABBLLeno_PuedoIterarConIteradorExterno_Inorder();
     DadoUnABBLLeno_PuedoIterarConIteradorExterno_Preorder();
     DadoUnABBLLeno_puedoIterarConIteradorExterno_Postorder();
-
-    //TODO: Faltan hacer pruebas de acumulacion!
-
-    pa2m_nuevo_grupo("Pruebas variadas");
-    DadoUnABBLleno_PuedoIterarHasta5_Postorder();
+    pa2m_nuevo_grupo("Pruebas con iterador externo y strings en el heap");
+    DadoUnABBLLeno_PuedoIterarConIteradorInternoYStringsEnHeap();
 
     return pa2m_mostrar_reporte();
 }

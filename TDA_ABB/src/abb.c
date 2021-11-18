@@ -118,7 +118,7 @@ nodo_abb_t* buscar_nodo_mayor(nodo_abb_t* nodo, nodo_abb_t** aux){
 
 /*
 * PRE:
-* POST: Busca el mayor valor del subarbol izquierdo
+* POST: Busca el mayor valor del subarbol izquierdo. Y devuelve el nodo.
 */
 nodo_abb_t* buscar_nodo_mayor_subarbol_izquierdo(nodo_abb_t* nodo){
     nodo_abb_t* aux = NULL;
@@ -253,68 +253,75 @@ void abb_destruir_todo(abb_t *arbol, void (*destructor)(void *)){
 * PRE:
 * POST: Devuelve la cantidad de elementos que hay en el arbol mediante un recorrido inorden.
 */
-size_t abb_con_cada_elemento_inorder(nodo_abb_t* nodo, bool (*visitar)(void*, void*), void* extra, size_t contador){
-    if(!nodo){
-        return contador;
+void abb_con_cada_elemento_inorder(nodo_abb_t* nodo, bool (*visitar)(void *, void *), void *extra,size_t* contador,bool* seguir_iterando){
+    if(nodo->izquierda && *seguir_iterando){
+        abb_con_cada_elemento_inorder(nodo->izquierda,visitar,extra,contador,seguir_iterando);
     }
-    contador = abb_con_cada_elemento_inorder(nodo->izquierda,visitar,extra,contador);
-    if(visitar(nodo->elemento,extra)){
-        contador++;
-    }else{
-        return contador;
+    if(*seguir_iterando){
+        if(!visitar(nodo->elemento,extra)){
+            *seguir_iterando = false;
+        }
+        (*contador)++;
     }
-    contador = abb_con_cada_elemento_inorder(nodo->derecha,visitar,extra,contador);
-    return contador;
+    if(nodo->derecha && *seguir_iterando){
+        abb_con_cada_elemento_inorder(nodo->derecha,visitar,extra,contador,seguir_iterando);
+    }
 }
 
 /*
 * PRE:
 * POST: Devuelve la cantidad de elementos que hay en el arbol mediante un recorrido preorden.
 */
-size_t abb_con_cada_elemento_preorder(nodo_abb_t* nodo, bool (*visitar)(void*, void*), void* extra, size_t contador){
-    if(!nodo){
-        return contador;
+void abb_con_cada_elemento_preorder(nodo_abb_t* nodo, bool (*visitar)(void *, void *), void *extra,size_t* contador,bool* seguir_iterando){
+    if(*seguir_iterando){
+        if(!visitar(nodo->elemento,extra)){
+            *seguir_iterando = false;
+        }
+        (*contador)++;
     }
-    if(visitar(nodo->elemento,extra)){
-        contador++;
-    }else{
-        return contador;
+    if(nodo->izquierda && *seguir_iterando){
+        abb_con_cada_elemento_preorder(nodo->izquierda,visitar,extra,contador,seguir_iterando);
     }
-    contador = abb_con_cada_elemento_preorder(nodo->izquierda,visitar,extra,contador);
-    contador = abb_con_cada_elemento_preorder(nodo->derecha,visitar,extra,contador);
-    return contador;
+    if(nodo->derecha && *seguir_iterando){
+        abb_con_cada_elemento_preorder(nodo->derecha,visitar,extra,contador,seguir_iterando);
+    }
 }
 
 /*
 * PRE: 
 * POST: Devuelve la cantidad de elementos que hay en el arbol mediante un recorrido postorden.
 */
-size_t abb_con_cada_elemento_postorder(nodo_abb_t* nodo, bool (*visitar)(void*, void*), void* extra, size_t contador){
-    if(!nodo){
-        return contador;
+void abb_con_cada_elemento_postorder(nodo_abb_t* nodo, bool (*visitar)(void *, void *), void *extra,size_t* contador,bool* seguir_iterando){
+    if(nodo->izquierda && *seguir_iterando){
+        abb_con_cada_elemento_postorder(nodo->izquierda,visitar,extra,contador,seguir_iterando);
     }
-    contador = abb_con_cada_elemento_postorder(nodo->izquierda,visitar,extra,contador);
-    contador = abb_con_cada_elemento_postorder(nodo->derecha,visitar,extra,contador);
-    if(visitar(nodo->elemento,extra)){
-        contador++;
-    }else{
-        return contador;
+    if(nodo->derecha && *seguir_iterando){
+        abb_con_cada_elemento_postorder(nodo->derecha,visitar,extra,contador,seguir_iterando);
     }
-    return contador;
+    if(*seguir_iterando){
+        if(!visitar(nodo->elemento,extra)){
+            *seguir_iterando = false;
+        }
+        (*contador)++;
+    }
 }
 
 size_t abb_con_cada_elemento(abb_t *arbol, abb_recorrido recorrido, bool (*funcion)(void *, void *), void *aux){
-    if(!arbol || !funcion){
-        return 0;
-    }
     size_t contador = 0;
-    if(recorrido == PREORDEN){
-        return abb_con_cada_elemento_preorder(arbol->nodo_raiz,funcion,aux,contador);
-    }else if(recorrido == INORDEN){
-        return abb_con_cada_elemento_inorder(arbol->nodo_raiz,funcion,aux,contador);
-    }else if(recorrido == POSTORDEN){
-        return abb_con_cada_elemento_postorder(arbol->nodo_raiz,funcion,aux,contador);
+    bool seguir_iterando = true;
+
+    if(!arbol || !funcion || abb_vacio(arbol)){
+        return contador;
     }
+
+    if(recorrido == PREORDEN){
+        abb_con_cada_elemento_preorder(arbol->nodo_raiz,funcion,aux,&contador,&seguir_iterando);
+    }else if(recorrido == INORDEN){
+        abb_con_cada_elemento_inorder(arbol->nodo_raiz,funcion,aux,&contador,&seguir_iterando);
+    }else if(recorrido == POSTORDEN){
+        abb_con_cada_elemento_postorder(arbol->nodo_raiz,funcion,aux,&contador,&seguir_iterando);
+    }
+
     return contador;
 }
 

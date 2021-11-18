@@ -1,0 +1,12 @@
+E;Ash
+P;Pikachu;10;11;10
+P;Butterfree;11;12;11
+P;Pidgeotto;12;13;12
+P;Bulbasaur;13;14;13
+P;Charmander;18;19;18
+P;Squirtle;19;20;19
+P;Krabby;60;61;60
+P;Raticate;61;62;61
+P;Haunter;62;63;62
+P;Primeape;63;64;63
+P;Muk;64;65;64
