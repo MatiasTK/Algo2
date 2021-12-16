@@ -39,6 +39,9 @@ a -> veces que se llama a la misma funcion dentro de la misma.
 b -> en cuanto se divide el problema por ejemplo si parto el vector a la mitad se divide en 2
 f(n) -> es el resto suele ser O(1) -> se le llama "C"
 
+IMPORTANTE: SI F(N) es negativa no se puede
+o si a y b es menor a 1
+
 - Calculo log_b(a) = C y tengo 3 casos:
 1. Es menor -> T(n) = O(n^C) -> 1 < n 
 2. Igual -> O(n^c log(n)) 

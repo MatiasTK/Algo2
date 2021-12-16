@@ -155,4 +155,13 @@ void lista_iterador_destruir(lista_iterador_t* iterador);
  */
 size_t lista_con_cada_elemento(lista_t* lista, bool (*funcion)(void*, void*), void *contexto);
 
+/* 
+* Funcion extra para utilizar en el TP2
+* Ordena la lista
+* Recibe una funcion de comparacion y una lista
+* La funcion de comparacion recibe dos elementos y devuelve un valor negativo si el primero es menor al segundo, positivo si el primero es mayor al segundo o 0 si son iguales
+* Si no recibe un comparador o una lista no hace nada.
+*/
+void ordenar_lista(lista_t* lista, int (*comparar)(void*, void*)); 
+
 #endif /* __LISTA_H__ */

@@ -1,0 +1,84 @@
+G;Ciudad Plateada;100;0
+L;Brock
+P;Geodude;10;11;10
+P;Omastar;11;12;11
+P;Rhyhorn;12;13;12
+P;Onix;13;14;13
+P;Kabutops;14;15;14
+E;Montaniero
+P;Golem;6;7;6
+P;Graveler;7;8;7
+P;Relicanth;8;9;8
+E;Campista
+P;Diglett;3;4;3
+P;Sandsshrew;4;5;4
+G;Ciudad Celeste;200;1
+L;Misty
+P;Staryu;20;21;20
+P;Starmie;21;22;21
+P;Golduck;22;23;22
+P;Quagsire;23;24;23
+P;Lapras;24;25;24
+E;Nadadora
+P;Cloyster;13;14;13
+P;Seaking;14;15;14
+P;Azumarill;15;16;15
+E;Dominguera
+P;Milotic;9;10;9
+P;Lanturn;10;11;10
+G;Ciudad Carmin;300;2
+L;Teniente Surge
+P;Voltorb;30;31;30
+P;Raichu;31;32;31
+P;Electrode;32;33;32
+P;Magneton;33;34;33
+P;Elecrabuzz;34;35;34
+E;Guitarrista
+P;Magnemite;25;26;25
+P;Flaaffy;26;27;26
+P;Jolteon;27;28;27
+E;Malabarista
+P;Electrike;21;22;21
+P;Manectric;22;23;22
+G;Ciudad Azulona;400;3
+L;Erika
+P;Victreebel;40;41;40
+P;Tangela;41;42;41
+P;Vileplume;42;43;42
+P;Weepinbell;43;44;43
+P;Gloom;44;45;44
+E;Modelo
+P;Paras;37;38;37
+P;Carnivine;38;39;38
+P;Exeggutor;39;40;39
+E;Bella
+P;Bellsprout;32;33;32
+P;Oddish;33;34;33
+G;Ciudad Azafran;500;4
+L;Sabrina
+P;Espeon;50;51;50
+P;Alakazam;51;52;51
+P;Gallade;52;51;52
+P;Jynx;52;53;52
+P;Wobbuffet;53;54;53
+E;Mentalista
+P;Slowpoke;46;47;46
+P;Kadabra;47;48;47
+P;Mr Mime;48;49;48
+E;Exorcista
+P;Gastly;42;43;42
+P;Haunter;43;44;43
+G;Ciudad Verde;600;0
+L;Giovanni
+P;Steelix;55;56;55
+P;KangasKhan;56;57;56
+P;NidoQueen;57;58;57
+P;NidoKing;58;59;58
+P;Rhydon;59;60;59
+E;Domador
+P;Nidodina;50;51;50
+P;Nidorino;51;52;51
+P;Tauros;52;53;52
+E;Karateka
+P;Arbok;48;49;48
+P;Machop;50;51;50

@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
+// EJ -> https://i.imgur.com/WdEvwzY.png
 
 void liberar(char* c1,char* c2,char* c3,char* c4,char*** v){
     free(c1);

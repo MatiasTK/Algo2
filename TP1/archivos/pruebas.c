@@ -21,6 +21,7 @@ void resetear_acumulados(){
 }
 
 bool acumular_pokemon(pokemon_t* p){
+    printf("Acumulando %s\n", pokemon_nombre(p));
     acumulados.pokemon[acumulados.cantidad] = p;
     acumulados.cantidad++;
     return true;

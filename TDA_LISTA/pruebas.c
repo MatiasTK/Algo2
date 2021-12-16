@@ -28,6 +28,25 @@ bool prueba_iterador_interno_con_contexto(void* elemento_1, void* contexto){
     return true;
 }
 
+// -----------------------------------------------------------------------------
+//! Pruebas TP2
+
+bool imprimir_lista(void *dato,void *param){
+    char* string = (char*)dato;
+
+    printf("%s\n",string);
+
+    return true;
+}
+
+int comparador_strings(void* s1, void* s2){
+    char* string1 = (char*)s1;
+    char* string2 = (char*)s2;
+
+    return strcmp(string1,string2);
+}
+
+// -----------------------------------------------------------------------------
 
 void DadaUnaListaNULLSeCreaUnaVacia(){
     lista_t* lista = NULL;
@@ -643,7 +662,35 @@ void PuedoBorrarEnUnaPosicionMayorALaCantidad(){
     lista_destruir(lista);
 }
 
+void DadaUnaListaNoNULLPuedoOrdenar(){
+    lista_t* lista = lista_crear();
 
+    char* pokemon_1 = "Pikachu";
+    char* pokemon_2 = "Charmander";
+    char* pokemon_3 = "Bulbasaur";
+    char* pokemon_4 = "Squirtle";
+    char* pokemon_5 = "Pidgey";
+
+    lista_insertar(lista, pokemon_1);
+    lista_insertar(lista, pokemon_2);
+    lista_insertar(lista, pokemon_3);
+    lista_insertar(lista, pokemon_4);
+    lista_insertar(lista, pokemon_5);
+
+    int contador = 0;
+
+    pa2m_afirmar(lista_tamanio(lista)==5,"La lista tiene ahora tamaño 5");
+
+    lista_con_cada_elemento(lista, imprimir_lista,&contador);
+
+    printf("Intento ordenar la lista\n");
+
+    ordenar_lista(lista,comparador_strings);
+
+    lista_con_cada_elemento(lista, imprimir_lista,&contador);
+
+    lista_destruir(lista);
+}
 
 int main() {
     pa2m_nuevo_grupo("Pruebas de creacion y destruccion de la lista");
@@ -683,6 +730,9 @@ int main() {
     pa2m_nuevo_grupo("Recreacion de pruebas chanutron");
     AlBorrarUnElementoDeLalistaQuedaCon0Elementos();
     PuedoBorrarEnUnaPosicionMayorALaCantidad();
+
+    pa2m_nuevo_grupo("Pruebas de sort");
+    DadaUnaListaNoNULLPuedoOrdenar();
 
     return pa2m_mostrar_reporte();
 }

@@ -28,10 +28,10 @@
             "miDebuggerArgs": "-wall -werror -wconversion -std=c99;-q -ex quit; wait() { fg >/dev/null; }; /bin/gdb -q --interpreter=mi"
         },
         {
-            "name": "TDA Lista",
+            "name": "TP2 - Hospital",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/TDA_LISTA/pruebas",
+            "program": "${workspaceFolder}/TP2/pruebas_hospital",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -48,10 +48,10 @@
             "miDebuggerArgs": "-wall -werror -wconversion -std=c99;-q -ex quit; wait() { fg >/dev/null; }; /bin/gdb -q --interpreter=mi"
         },
         {
-            "name": "TDA ABB",
+            "name": "TP2 - Simulador",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/TDA_ABB/pruebas",
+            "program": "${workspaceFolder}/TP2/pruebas",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -67,45 +67,5 @@
             ],
             "miDebuggerArgs": "-wall -werror -wconversion -std=c99;-q -ex quit; wait() { fg >/dev/null; }; /bin/gdb -q --interpreter=mi"
         },
-        {
-            "name": "TDA ABB ejemplo",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/TDA_ABB/ejemplo",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ],
-            "miDebuggerArgs": "-wall -werror -wconversion -std=c99;-q -ex quit; wait() { fg >/dev/null; }; /bin/gdb -q --interpreter=mi"
-        },
-        {
-            "name": "CUSTOM",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/PARCIAL/2021-1c?/recursividad",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ],
-            "miDebuggerArgs": "-wall -werror -wconversion -std=c99;-q -ex quit; wait() { fg >/dev/null; }; /bin/gdb -q --interpreter=mi"
-        }
     ]
 }

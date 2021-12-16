@@ -198,8 +198,6 @@ void dadoUnHashConElementos_SiEliminoElementos_LosElementosSeEliminanCorrectamen
   pa2m_afirmar(!hash_contiene(hash, clave_7), "La clave cera ya no existe en el hash");
   pa2m_afirmar(hash_contiene(hash, clave_6), "La clave joya sigue pudiendose encontrar en el hash");
 
-
-
   hash_destruir(hash);
 }
 

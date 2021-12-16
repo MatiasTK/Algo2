@@ -283,3 +283,30 @@ size_t lista_con_cada_elemento(lista_t* lista, bool (*funcion)(void*, void*), vo
 
     return 0;
 }
+
+void ordenar_lista(lista_t* lista, int (*comparar)(void*, void*)){
+    if(!lista || !comparar){
+        return;
+    }
+    if(lista_tamanio(lista) <= 1){
+        return;
+    }
+
+    nodo_t* actual = lista->nodo_inicio;
+    nodo_t* index = NULL;
+
+    while(actual != NULL){
+        index = actual->siguiente;
+        while(index != NULL){
+            if(comparar(actual->elemento,index->elemento) > 0){
+                void* aux = actual->elemento;
+                actual->elemento = index->elemento;
+                index->elemento = aux;
+            }
+            index = index->siguiente;
+        }
+        actual = actual->siguiente;
+    }
+
+}
+

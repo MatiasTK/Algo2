@@ -1,0 +1,9 @@
+G;Gimnasio de Ciudad Celeste; 15; 3
+L;Misty
+P;Staryu; 10; 40; 10;
+P;Starmie; 10; 10; 10;
+E;Dominguera Diana
+P;Goldeen; 10; 10; 30
+E;Nadador Luis
+P;Horsea; 5; 30; 20
+P;Shellder; 30;20;10
