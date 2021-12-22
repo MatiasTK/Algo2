@@ -21,29 +21,20 @@ heap_t* heap_crear(heap_comparador_t comparador, heap_destructor_t destructor){
 }
 
 /*
-* PRE: Recibe un posicion del heap
-* POST: Devuelve el padre de esa posicion del heap.
+* PRE:
+* POST:
 */
-int buscar_pos_padre(int pos){
-    return (pos-1)/2;
-}
-
-/*
-* PRE: El comparador y el heap deben ser validos.
-* POST: "Mueve" el elemento de la posicion recibida del heap hacia arriba segun lo indique el comparador.
-*/
-void sift_up(heap_t* heap, int pos, heap_comparador_t comparador){
+void sift_up(heap_t* heap, size_t pos, heap_comparador_t comparador){
     if(!heap || !comparador || pos == 0){
         return;
     }
 
-    int pos_padre = buscar_pos_padre(pos);
-
-    if(comparador(heap->array[pos], heap->array[pos_padre]) < 0){
-        void* aux = heap->array[pos];
-        heap->array[pos] = heap->array[pos_padre];
-        heap->array[pos_padre] = aux;
-        sift_up(heap, pos_padre, comparador);
+    size_t padre = (pos - 1) / 2;
+    if(comparador(heap->array[padre], heap->array[pos]) > 0){
+        void* aux = heap->array[padre];
+        heap->array[padre] = heap->array[pos];
+        heap->array[pos] = aux;
+        sift_up(heap, padre, comparador);
     }
 }
 
@@ -57,19 +48,16 @@ int heap_insertar(heap_t* heap, void* elemento){
         return ERROR;
     }
 
-    heap->tope++;
     heap->array = nuevo_array;
-    heap->array[(heap->tope)-1] = elemento;
+    heap->array[heap->tope] = elemento;
 
-    sift_up(heap, (int)(heap->tope)-1, heap->comparador);
+    sift_up(heap, heap->tope, heap->comparador);
    
+    heap->tope++;
+
     return EXITO;
 }
 
-/*
-* PRE: Recibe un comparador y un heap valido.
-* POST: "Mueve" el elemento de la posicion recibida del heap hacia abajo segun lo indique el comparador.
-*/
 void sift_down(heap_t* heap, size_t pos, heap_comparador_t comparador){
     if(!heap || !comparador || pos >= heap->tope){
         return;
@@ -83,15 +71,11 @@ void sift_down(heap_t* heap, size_t pos, heap_comparador_t comparador){
     }
 
     size_t hijo_mas_grande = hijo_izq;
-    if(hijo_der < heap->tope){
-        int comparacion = comparador(heap->array[hijo_izq], heap->array[hijo_der]);
-        if(comparacion >= 0){
-            hijo_mas_grande = hijo_der;
-        }
+    if(hijo_der < heap->tope && comparador(heap->array[hijo_izq], heap->array[hijo_der]) < 0){
+        hijo_mas_grande = hijo_der;
     }
 
-    int comparacion = comparador(heap->array[pos], heap->array[hijo_mas_grande]);
-    if(comparacion > 0){
+    if(comparador(heap->array[pos], heap->array[hijo_mas_grande]) > 0){
         void* aux = heap->array[pos];
         heap->array[pos] = heap->array[hijo_mas_grande];
         heap->array[hijo_mas_grande] = aux;
@@ -105,7 +89,7 @@ void* heap_extraer_raiz(heap_t* heap){
     }
 
     void* raiz = heap->array[0];
-    void* ultimo = heap->array[(heap->tope)-1];
+    void* ultimo = heap->array[heap->tope - 1];
     heap->array[0] = ultimo;
     heap->tope--;
 
@@ -115,9 +99,7 @@ void* heap_extraer_raiz(heap_t* heap){
             return NULL;
         }
         heap->array = nuevo_array;
-    }
 
-    if(heap->tope > 0){
         sift_down(heap, 0, heap->comparador);
     }
 

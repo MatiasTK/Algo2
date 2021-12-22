@@ -15,7 +15,7 @@
 #define POSICION_NOMBRE_ENTRENADOR 1
 
 struct _hospital_pkm_t{
-    lista_t* lista_pokemones;
+    lista_t* lista_entrenadores;
     size_t cantidad_pokemon;
     size_t cantidad_entrenador;
 };
@@ -28,6 +28,7 @@ struct _pkm_t{
 
 struct _entrenador_t{
     char* nombre;
+    lista_t* lista_pokemones;
     size_t id;
 };
 
@@ -97,8 +98,8 @@ hospital_t* hospital_crear(){
         return NULL;
     }
 
-    hospital->lista_pokemones = lista_crear();
-    if(!hospital->lista_pokemones){
+    hospital->lista_entrenadores = lista_crear();
+    if(!hospital->lista_entrenadores){
         free(hospital);
         return NULL;
     }
@@ -107,34 +108,27 @@ hospital_t* hospital_crear(){
 }
 
 /*
-* PRE: hospital debe estar creado, linea_split debe estar inicializado y ser distinto de null, vector debe estar creado previamente, posicion debe estar incializado
-* POST: Agrega el pokemon al vector y aumenta la cantidad de pokemones
+* PRE: Recibe una lista_pokemones inicializada, la linea split, la posicion del split en la que esta, y el entrenador del pokemon.
+* POST: Añade el pokemon a la lista de pokemones del entrenador.
 */
-void agregar_pokemon(hospital_t* hospital,char** linea_split,int posicion){
-    pokemon_t* pokemon = calloc(1,sizeof(pokemon_t));
-    if(!pokemon){
-        return;
-    }
-    entrenador_t* entrenador = calloc(1,sizeof(entrenador_t));
-    if(!entrenador){
+void agregar_pokemon(lista_t* lista_pokemones,char** linea_split,int posicion, entrenador_t* entrenador){
+    pokemon_t* pokemon_nuevo = calloc(1, sizeof(pokemon_t));
+    if(!pokemon_nuevo){
         return;
     }
 
-    entrenador->id = (size_t)atoi(linea_split[POSICION_ID_ENTRENADOR]);
-    entrenador->nombre = strdup(linea_split[POSICION_NOMBRE_ENTRENADOR]);
+    pokemon_nuevo->nombre = strdup(linea_split[posicion]);
+    pokemon_nuevo->nivel = (size_t)atoi(linea_split[posicion + 1]);
+    pokemon_nuevo->entrenador = entrenador;
 
-    pokemon->nombre = strdup(linea_split[posicion]);
-    pokemon->nivel = (size_t)atoi(linea_split[posicion + 1]);
-    pokemon->entrenador = entrenador;
+    lista_insertar(lista_pokemones, pokemon_nuevo);
 
-    lista_insertar(hospital->lista_pokemones, pokemon);
-
-    hospital->cantidad_pokemon++;
+    return;
 }  
 
 /*
-* PRE: El hospital debe estar creado, linea debe ser una linea valida, vector debe estar creado previamente, size debe estar inicializado
-* POST: Busca el proximo pokemon en la linea y la agrega al vector, devuelve false en caso de error o true en caso contrario
+* PRE: El hospital debe estar creado, linea debe ser una linea valida.
+* POST: Añade el entrenador a la lista de entrenadores del hospital con sus debidos pokemones. La lista de entrenadores debe estar inicializada. Devuelve false en caso de error o true en caso de exito.
 */
 bool buscar_y_agregar_pokemon(hospital_t* hospital,char* linea){
     char** linea_split;
@@ -143,10 +137,24 @@ bool buscar_y_agregar_pokemon(hospital_t* hospital,char* linea){
         return ERROR;
     }
 
+    entrenador_t* entrenador_nuevo = calloc(1, sizeof(entrenador_t));
+    if(!entrenador_nuevo){
+        return ERROR;
+    }
+
+    entrenador_nuevo->nombre = strdup(linea_split[POSICION_NOMBRE_ENTRENADOR]);
+    entrenador_nuevo->id = (size_t)atoi(linea_split[POSICION_ID_ENTRENADOR]);
+    entrenador_nuevo->lista_pokemones = lista_crear();
+    if(!entrenador_nuevo->lista_pokemones){
+        free(entrenador_nuevo);
+        return ERROR;
+    }
+
     int len = split_len(linea_split);
     for(int i = 2; i <= len;i++){  
         if(i % 2 == 0){
-            agregar_pokemon(hospital,linea_split,i);
+            agregar_pokemon(entrenador_nuevo->lista_pokemones,linea_split,i, entrenador_nuevo);
+            hospital->cantidad_pokemon++;
         }
     }
     free(linea_split[POSICION_ID_ENTRENADOR]);
@@ -155,6 +163,7 @@ bool buscar_y_agregar_pokemon(hospital_t* hospital,char* linea){
         free(linea_split[i]);
     } 
     free(linea_split);
+    lista_insertar(hospital->lista_entrenadores, entrenador_nuevo);
     hospital->cantidad_entrenador++;
     return EXITO;
 }
@@ -210,6 +219,10 @@ size_t hospital_cantidad_entrenadores(hospital_t* hospital){
     return hospital->cantidad_entrenador;
 }
 
+/*
+* PRE: Recibe dos pokemones.
+* POST: Devuelve 0 si el nombre de los dos pokemones son iguales, 1 si el primero es mayor alfabeticamente y -1 si el segundo es mayor alfabeticamente.
+*/
 int comparador_pokemones(void* pokemon1, void* pokemon2){
     if(!pokemon1 || !pokemon2){
         return ERROR;
@@ -219,14 +232,66 @@ int comparador_pokemones(void* pokemon1, void* pokemon2){
     return strcmp(p1->nombre,p2->nombre);
 }
 
+/*
+* PRE: Recibe un hospital y una lista ya inicializada.
+* POST: Carga la lista con todos los pokemones del hospital sin importar su entrenador.
+*/
+void cargar_pokemones_en_lista(hospital_t* hospital, lista_t* lista_pokemones){
+    if(!hospital || !lista_pokemones){
+        return;
+    }
+    
+    lista_iterador_t* iterador = lista_iterador_crear(hospital->lista_entrenadores);
+    if(!iterador){
+        return;
+    }
+
+    while(lista_iterador_tiene_siguiente(iterador)){
+        entrenador_t* entrenador = lista_iterador_elemento_actual(iterador);
+        if(!entrenador){
+            lista_iterador_destruir(iterador);
+            return;
+        }
+
+        lista_iterador_t* iterador_pokemones = lista_iterador_crear(entrenador->lista_pokemones);
+        if(!iterador_pokemones){
+            lista_iterador_destruir(iterador);
+            return;
+        }
+
+        while(lista_iterador_tiene_siguiente(iterador_pokemones)){
+            pokemon_t* pokemon = lista_iterador_elemento_actual(iterador_pokemones);
+            if(!pokemon){
+                lista_iterador_destruir(iterador_pokemones);
+                lista_iterador_destruir(iterador);
+                return;
+            }
+            lista_insertar(lista_pokemones, pokemon);
+            lista_iterador_avanzar(iterador_pokemones);
+        }
+        lista_iterador_destruir(iterador_pokemones);
+        
+        lista_iterador_avanzar(iterador);
+    }
+    lista_iterador_destruir(iterador);
+}
+
 size_t hospital_a_cada_pokemon(hospital_t* hospital, bool (*funcion)(pokemon_t* p)){
     if(!hospital || !funcion){
         return 0;
     }
     size_t contador = 0;
-    lista_ordenar(hospital->lista_pokemones,comparador_pokemones);
 
-    lista_iterador_t* iterador = lista_iterador_crear(hospital->lista_pokemones);
+    lista_t* lista_pokemones = lista_crear();
+    if(!lista_pokemones){
+        return 0;
+    }
+
+    cargar_pokemones_en_lista(hospital, lista_pokemones);
+
+    lista_ordenar(lista_pokemones,comparador_pokemones); //Ordeno la lista de pokemones alfabeticamente.
+
+    lista_iterador_t* iterador = lista_iterador_crear(lista_pokemones);
     if(!iterador){
         return 0;
     }
@@ -236,6 +301,7 @@ size_t hospital_a_cada_pokemon(hospital_t* hospital, bool (*funcion)(pokemon_t* 
         if(!funcion(pokemon)){
             contador++;
             lista_iterador_destruir(iterador);
+            lista_destruir(lista_pokemones);
             return contador;
         }
         contador++;
@@ -243,6 +309,9 @@ size_t hospital_a_cada_pokemon(hospital_t* hospital, bool (*funcion)(pokemon_t* 
     }
 
     lista_iterador_destruir(iterador);
+
+    lista_destruir(lista_pokemones);
+
     return contador;
 }
 
@@ -251,23 +320,35 @@ void hospital_destruir(hospital_t* hospital){
         return;
     }
 
-    lista_iterador_t* iterador = lista_iterador_crear(hospital->lista_pokemones);
-    if(!iterador){
-        lista_destruir(hospital->lista_pokemones);
+    lista_iterador_t* iterador_entrenadores = lista_iterador_crear(hospital->lista_entrenadores);
+    if(!iterador_entrenadores){
         free(hospital);
         return;
     }
 
-    while(lista_iterador_tiene_siguiente(iterador)){
-        pokemon_t* pokemon = lista_iterador_elemento_actual(iterador);
-        free(pokemon->nombre);
-        free(pokemon->entrenador->nombre);
-        free(pokemon->entrenador);
-        free(pokemon);
-        lista_iterador_avanzar(iterador);
+    while(lista_iterador_tiene_siguiente(iterador_entrenadores)){
+        entrenador_t* entrenador = lista_iterador_elemento_actual(iterador_entrenadores);
+        
+        lista_iterador_t* iterador_pokemones = lista_iterador_crear(entrenador->lista_pokemones);
+        while(lista_iterador_tiene_siguiente(iterador_pokemones)){
+            pokemon_t* pokemon = lista_iterador_elemento_actual(iterador_pokemones);
+
+            free(pokemon->nombre);
+            free(pokemon);
+
+            lista_iterador_avanzar(iterador_pokemones);
+        }
+
+        lista_iterador_destruir(iterador_pokemones);
+
+        lista_destruir(entrenador->lista_pokemones);
+
+        free(entrenador->nombre);
+        free(entrenador);
+        lista_iterador_avanzar(iterador_entrenadores);
     }
-    lista_iterador_destruir(iterador);
-    lista_destruir(hospital->lista_pokemones);
+    lista_iterador_destruir(iterador_entrenadores);
+    lista_destruir(hospital->lista_entrenadores);
 
     free(hospital);
 
@@ -305,39 +386,44 @@ bool hospital_guardar_archivo(hospital_t* hospital, const char* nombre_archivo){
         return ERROR;
     }
 
-    bool entrenador_escrito = false;
+    lista_iterador_t* iterador_entrenadores = lista_iterador_crear(hospital->lista_entrenadores);
+    if(!iterador_entrenadores){
+        fclose(archivo);
+        return ERROR;
+    }
 
-    for(int i = 1; i < hospital->cantidad_entrenador + 1; i++){
-        fprintf(archivo,"%i",i);
-
-        lista_iterador_t* iterador = lista_iterador_crear(hospital->lista_pokemones);
-        if(!iterador){
+    while(lista_iterador_tiene_siguiente(iterador_entrenadores)){
+        entrenador_t* entrenador = lista_iterador_elemento_actual(iterador_entrenadores);
+        if(!entrenador){
             fclose(archivo);
             return ERROR;
         }
 
-        while(lista_iterador_tiene_siguiente(iterador)){
-            pokemon_t* pokemon = lista_iterador_elemento_actual(iterador);
+        fprintf(archivo,"%ld;%s",entrenador->id,entrenador->nombre);
 
-            if(pokemon->entrenador->id == i){
+        lista_iterador_t* iterador_pokemones = lista_iterador_crear(entrenador->lista_pokemones);
 
-                if(entrenador_escrito == false){
-                    fprintf(archivo,";%s",pokemon->entrenador->nombre);
-                    entrenador_escrito = true;
-                }
-
-                fprintf(archivo,";%s;%ld",pokemon->nombre,pokemon->nivel);
+        while(lista_iterador_tiene_siguiente(iterador_pokemones)){
+            pokemon_t* pokemon = lista_iterador_elemento_actual(iterador_pokemones);
+            if(!pokemon){
+                fclose(archivo);
+                return ERROR;
             }
-            lista_iterador_avanzar(iterador);
+
+            fprintf(archivo,";%s;%ld",pokemon->nombre,pokemon->nivel);
+
+            lista_iterador_avanzar(iterador_pokemones);
         }
+
+        lista_iterador_destruir(iterador_pokemones);
 
         fprintf(archivo,"\n");
 
-        entrenador_escrito = false;
-
-        lista_iterador_destruir(iterador);
+        lista_iterador_avanzar(iterador_entrenadores);
     }
 
+    lista_iterador_destruir(iterador_entrenadores);
+
     fclose(archivo);
-    return EXITO;
+    return EXITO; 
 }

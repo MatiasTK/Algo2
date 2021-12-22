@@ -1,8 +1,10 @@
 #include "pa2mm.h"
 #include "src/hospital.h"
+#include "src/lista.h"
 
 #include "string.h"
 #include <stdbool.h>
+#include <stdio.h>
 
 /* No intenten esto en sus casas */
 /* Ya vamos a ver como evitar esto en el TDA Lista */
@@ -12,6 +14,12 @@ struct{
 } acumulados;
 
 // Copia de structs para poder hacer pruebas
+struct _hospital_pkm_t{
+    lista_t* lista_entrenadores;
+    size_t cantidad_pokemon;
+    size_t cantidad_entrenador;
+};
+
 struct _pkm_t{
     char* nombre;
     size_t nivel;
@@ -20,15 +28,13 @@ struct _pkm_t{
 
 struct _entrenador_t{
     char* nombre;
+    lista_t* lista_pokemones;
     size_t id;
-    bool atendido;
 };
 
 bool imprimir_entrenador_y_nivel(pokemon_t* pokemon){
 
-    entrenador_t* entrenador = pokemon->entrenador;	
-
-    printf("Pokemon: %s, Nivel: %ld, Entrenador: %s\n", pokemon_nombre(pokemon), pokemon_nivel(pokemon),entrenador->nombre);
+    printf("Pokemon: %s, Nivel: %ld, Entrenador: %s\n", pokemon_nombre(pokemon), pokemon_nivel(pokemon),pokemon->entrenador->nombre);
 
     return true;
 }
@@ -241,6 +247,33 @@ void PuedoObtenerDatosDelPokemon(){
     hospital_destruir(hospital);
 }
 
+void imprimir_lista_entrenadores(hospital_t* hospital){
+
+    lista_iterador_t* iterador = lista_iterador_crear(hospital->lista_entrenadores);
+
+    while(lista_iterador_tiene_siguiente(iterador)){
+        entrenador_t* entrenador = lista_iterador_elemento_actual(iterador);
+        printf("ID: %ld - NOMBRE: %s\n",entrenador->id,entrenador->nombre);
+        lista_iterador_avanzar(iterador);
+    }
+
+    lista_iterador_destruir(iterador);
+}
+
+void LaListaDeEntrenadoresSeCarga_Correctamente(){
+    hospital_t* hospital = hospital_crear();
+
+    pa2m_afirmar(hospital_leer_archivo(hospital, "ejemplos/varios_entrenadores.hospital"), "Puedo leer un archivo con varios entrenadores");
+
+    pa2m_afirmar(hospital_cantidad_entrenadores(hospital)==5, "El hospital tiene 5 entrenadores");
+
+    printf("Los entrenadores son:\n");
+
+    imprimir_lista_entrenadores(hospital);
+
+    hospital_destruir(hospital);
+}
+
 int main(){
 
     pa2m_nuevo_grupo("Pruebas de creación y destrucción");
@@ -269,6 +302,7 @@ int main(){
     PuedoGuardarUnArchivoVacio(); 
     PuedoGuardarUnArchivoInvalido();
     PuedoObtenerDatosDelPokemon();
- 
+    LaListaDeEntrenadoresSeCarga_Correctamente();
+
     return pa2m_mostrar_reporte();
 }

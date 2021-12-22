@@ -9,7 +9,7 @@ typedef struct _pkm_t pokemon_t;
 typedef struct _entrenador_t entrenador_t;
 
 struct _hospital_pkm_t{
-    lista_t* lista_pokemones;
+    lista_t* lista_entrenadores;
     size_t cantidad_pokemon;
     size_t cantidad_entrenador;
 };
@@ -22,8 +22,8 @@ struct _pkm_t{
 
 struct _entrenador_t{
     char* nombre;
+    lista_t* lista_pokemones;
     size_t id;
-    bool atendido;
 };
 
 #endif // __ESTRUCTURA_AUX_H__

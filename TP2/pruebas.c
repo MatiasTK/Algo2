@@ -7,16 +7,17 @@
 #include <string.h>
 
 struct _simulador_t{
+
     hospital_t* hospital;
-    EstadisticasSimulacion* estadisticas;
-    InformacionPokemon* info_pokemon;
     heap_t* cola_espera;
-    size_t id_ultimo_entrenador;
-    Intento* intento_actual;
-    DatosDificultad* datos_dificultad;
+
+    EstadisticasSimulacion* estadisticas; 
+    InformacionPokemon* informacion_pokemon_actual; 
     lista_t* lista_dificultades;
-    bool simulacion_finalizada;
+
+    unsigned int cantidad_intentos;
     size_t dificultad_siguiente_id_disponible;
+    bool simulacion_finalizada;
 };
 
 typedef struct dificultades{
@@ -160,7 +161,7 @@ void SePuedeObtenerEstadisticas_correctamente(){
     pa2m_afirmar(simulador_simular_evento(simulador,ObtenerEstadisticas, estadisticas),"Se pudo obtener las estadisticas");
 
     pa2m_afirmar(estadisticas->entrenadores_atendidos == 1, "La cantidad de entrenadores se actualiza ");
-    pa2m_afirmar(estadisticas->pokemon_en_espera == 4 , "La cantidad de pokemon en espera se actualiza ");
+    pa2m_afirmar(estadisticas->pokemon_en_espera == 3, "La cantidad de pokemon en espera se actualiza (3 en espera 1 en consultorio)");
 
     free(estadisticas);
     simulador_destruir(simulador);
@@ -184,15 +185,15 @@ void SePuedeAtenderEntrenador_Correctamente(){
 
     pa2m_afirmar(simulador_simular_evento(simulador,ObtenerEstadisticas, estadisticas) == ExitoSimulacion, "Se pudo obtener las estadisticas");
 
-    pa2m_afirmar( simulador_simular_evento(simulador,AtenderProximoEntrenador, NULL) == ExitoSimulacion, "Se pudo atender el proximo entrenador");
+    pa2m_afirmar(simulador_simular_evento(simulador,AtenderProximoEntrenador, NULL) == ExitoSimulacion, "Se pudo atender el proximo entrenador");
 
     simulador_simular_evento(simulador,ObtenerEstadisticas, estadisticas);
 
-    pa2m_afirmar(heap_cantidad(simulador->cola_espera) == 4, "La cantidad de entrenadores en el heap es correcta");
+    pa2m_afirmar(heap_cantidad(simulador->cola_espera) == 3, "La cantidad de pokemones en el heap es correcta");
     pa2m_afirmar(estadisticas->entrenadores_atendidos == 1, "La cantidad de entrenadores atendidos es correcta");
     pa2m_afirmar(estadisticas->pokemon_atendidos == 0, "La cantidad de pokemon atendidos es correcta");
     pa2m_afirmar(estadisticas->cantidad_eventos_simulados == 3, "La cantidad de eventos simulados es correcta");
-    pa2m_afirmar(estadisticas->pokemon_en_espera == 4, "La cantidad de pokemon en espera es correcta");
+    pa2m_afirmar(estadisticas->pokemon_en_espera == 3, "La cantidad de pokemon en espera es correcta");
 
     free(estadisticas);
     simulador_destruir(simulador);
@@ -269,7 +270,7 @@ void SePuedeAdivinarNivelPokemon_Correctamente(){
 
     intento->nivel_adivinado = 25;
 
-    pa2m_afirmar(simulador_simular_evento(simulador,AdivinarNivelPokemon,intento) == ErrorSimulacion, "No se pudo adivinar el nivel ya que no hay ningun pokemon siendo atendido");
+    pa2m_afirmar(simulador_simular_evento(simulador,AdivinarNivelPokemon,intento) == ExitoSimulacion, "Se pudo adivinar el nivel del pokemon");
 
     InformacionPokemon* info_poke = calloc(1,sizeof(InformacionPokemon));
     if(info_poke == NULL){
@@ -304,7 +305,7 @@ void SePuedeAdivinarNivelPokemon_Correctamente(){
     pa2m_afirmar(simulador_simular_evento(simulador,ObtenerEstadisticas, estadisticas) == ExitoSimulacion, "Se pudo obtener las estadisticas");
     pa2m_afirmar(estadisticas->entrenadores_atendidos == 3, "La cantidad de entrenadores atendidos es correcta");
     pa2m_afirmar(estadisticas->pokemon_atendidos == 1, "La cantidad de pokemon atendidos es correcta");
-    pa2m_afirmar(estadisticas->pokemon_en_espera == 12, "La cantidad de pokemon en espera es correcta");
+    pa2m_afirmar(estadisticas->pokemon_en_espera == 11, "La cantidad de pokemon en espera es correcta");
     pa2m_afirmar(estadisticas->puntos == 117, "La cantidad de puntos es correcta");
     pa2m_afirmar(estadisticas->cantidad_eventos_simulados == 11, "La cantidad de eventos simulados es correcta");
 
@@ -337,7 +338,7 @@ void SePuedeAdivinarNivelPokemon_Correctamente(){
 
     pa2m_afirmar(simulador_simular_evento(simulador,ObtenerEstadisticas, estadisticas) == ExitoSimulacion, "Se pudo obtener las estadisticas");
     pa2m_afirmar(estadisticas->pokemon_atendidos == 2, "La cantidad de pokemon atendidos es correcta");
-    pa2m_afirmar(estadisticas->pokemon_en_espera == 11, "La cantidad de pokemon en espera es correcta");
+    pa2m_afirmar(estadisticas->pokemon_en_espera == 10, "La cantidad de pokemon en espera es correcta");
     pa2m_afirmar(estadisticas->puntos == 264, "La cantidad de puntos es correcta");
     
     free(intento);
@@ -397,6 +398,7 @@ void SePuedeAgregarUnaDificultad_Correctamente(){
     pa2m_afirmar(strcmp(dificultad_hardcore->nombre_dificultad,"hardcore")==0, "El nombre de la dificultad hardcore es correcto");
     pa2m_afirmar(dificultad_hardcore->en_uso == true, "La dificultad hardcore esta en uso");
  
+    free(nueva_dificultad);
     free(dificultad_hardcore);
     simulador_destruir(simulador);
 }
@@ -453,7 +455,7 @@ void NoSePuedeObtenerDificultadInexistente(){
 
     obtener->id = 3;
 
-    pa2m_afirmar(simulador_simular_evento(simulador,ObtenerInformacionDificultad, obtener) == ExitoSimulacion, "Se pudo obtener una dificultad inexistente");
+    pa2m_afirmar(simulador_simular_evento(simulador,ObtenerInformacionDificultad, obtener) == ErrorSimulacion, "No se pudo obtener una dificultad inexistente");
 
     pa2m_afirmar(obtener->nombre_dificultad == NULL, "No se pudo obtener el nombre de la dificultad - Nombre NULL");
     pa2m_afirmar(obtener->id == -1, "No se pudo obtener el id de la dificultad - Id -1");
@@ -496,6 +498,57 @@ void SePuedeObtenerDificultad_Correctamente(){
     pa2m_afirmar(obtener->en_uso == true, "El estado de la dificultad es correcto");
 
     free(obtener);
+    simulador_destruir(simulador);
+}
+
+void SePuedeExtraerDelHeapEnOrden_Correctamente(){
+    hospital_t* hospital = hospital_crear();
+
+    hospital_leer_archivo(hospital,"ejemplos/varios_entrenadores.hospital");
+
+    simulador_t* simulador = simulador_crear(hospital);
+
+    pa2m_afirmar(simulador_simular_evento(simulador, AtenderProximoEntrenador, NULL) == ExitoSimulacion, "Se pudo atender al proximo entrenador");
+    pa2m_afirmar(simulador_simular_evento(simulador, AtenderProximoEntrenador, NULL) == ExitoSimulacion, "Se pudo atender al proximo entrenador");
+    pa2m_afirmar(simulador_simular_evento(simulador, AtenderProximoEntrenador, NULL) == ExitoSimulacion, "Se pudo atender al proximo entrenador");
+    pa2m_afirmar(simulador_simular_evento(simulador, AtenderProximoEntrenador, NULL) == ExitoSimulacion, "Se pudo atender al proximo entrenador");
+    pa2m_afirmar(simulador_simular_evento(simulador, AtenderProximoEntrenador, NULL) == ExitoSimulacion, "Se pudo atender al proximo entrenador");
+    pa2m_afirmar(simulador_simular_evento(simulador, AtenderProximoEntrenador, NULL) == ErrorSimulacion, "No se pudo atender al proximo entrenador ya que no quedan mas");
+
+    InformacionPokemon* obtener = calloc(1,sizeof(InformacionPokemon));
+    if(obtener == NULL){
+        pa2m_afirmar(false,"No se pudo crear la informacion");
+    }
+
+    pa2m_afirmar(simulador_simular_evento(simulador, ObtenerInformacionPokemonEnTratamiento,obtener) == ExitoSimulacion, "Se pudo obtener la informacion del pokemon en tratamiento");
+    pa2m_afirmar(strcmp(obtener->nombre_pokemon,"rampardos")==0, "El nombre del pokemon es rampardos");
+    pa2m_afirmar(strcmp(obtener->nombre_entrenador,"lucas")==0, "El nombre del entrenador es lucas");
+
+    Intento* intento = calloc(1,sizeof(Intento));
+    if(intento == NULL){
+        pa2m_afirmar(false,"No se pudo crear el intento");
+    }
+
+    intento->nivel_adivinado = 10;
+
+    pa2m_afirmar(simulador_simular_evento(simulador, AdivinarNivelPokemon, intento) == ExitoSimulacion, "Se pudo intentar adivinar el pokemon");
+    pa2m_afirmar(intento->es_correcto, "Se adivino correctamente el nivel del pokemon");
+
+    pa2m_afirmar(simulador_simular_evento(simulador, ObtenerInformacionPokemonEnTratamiento,obtener) == ExitoSimulacion, "Se pudo obtener la informacion del pokemon en tratamiento");
+    pa2m_afirmar(strcmp(obtener->nombre_pokemon,"venonat")==0, "El nombre del pokemon es venonat");
+    pa2m_afirmar(strcmp(obtener->nombre_entrenador,"pucci")==0, "El nombre del entrenador es pucci");
+
+    intento->nivel_adivinado = 14;
+
+    pa2m_afirmar(simulador_simular_evento(simulador, AdivinarNivelPokemon, intento) == ExitoSimulacion, "Se pudo intentar adivinar el pokemon");
+    pa2m_afirmar(intento->es_correcto, "Se adivino correctamente el nivel del pokemon");
+
+    pa2m_afirmar(simulador_simular_evento(simulador, ObtenerInformacionPokemonEnTratamiento,obtener) == ExitoSimulacion, "Se pudo obtener la informacion del pokemon en tratamiento");
+    pa2m_afirmar(strcmp(obtener->nombre_pokemon,"charizard")==0, "El nombre del pokemon es charizard");
+    pa2m_afirmar(strcmp(obtener->nombre_entrenador,"lucas")==0, "El nombre del entrenador es lucas");
+
+    free(obtener);
+    free(intento);
     simulador_destruir(simulador);
 }
 
@@ -553,8 +606,6 @@ void SePuedeOperarConHospitalVacio_Correctamente(){
     pa2m_afirmar(simulador_simular_evento(simulador, ObtenerInformacionDificultad,dificultad) == ErrorSimulacion,"Obtener la informacion de la dificultad 3 devuelve ErrorSimulacion");
     pa2m_afirmar(dificultad->id == -1, "El id de la dificultad es correcto");
     pa2m_afirmar(dificultad->nombre_dificultad == NULL, "El nombre de la dificultad es correcto");
-
-
 
     int seleccionar_dificultad = 3;
 
@@ -618,9 +669,24 @@ void SePuedeOperarConHospitalConUnEntrenador_Correctamente(){
     }
 
     pa2m_afirmar(simulador_simular_evento(simulador, ObtenerInformacionPokemonEnTratamiento, info) == ExitoSimulacion, "Obtener la informacion del pokemon devuelve ExitoSimulacion");
+    pa2m_afirmar(strcmp(info->nombre_pokemon, "lapras")==0, "El pokemon que está siendo atendido es el de menor nivel (lapras)");
+    pa2m_afirmar(strcmp(info->nombre_entrenador, "Mariano")==0, "El entrenador de lapras es Mariano");
 
-    free(estadisticas);
+    pa2m_afirmar(simulador_simular_evento(simulador, ObtenerEstadisticas, estadisticas) == ExitoSimulacion, "Vuelvo a obtener estadísticas, devuelve ExitoSimulacion");
+    pa2m_afirmar(estadisticas->cantidad_eventos_simulados == 4, "La cantidad de eventos simulados es 4");
+    pa2m_afirmar(estadisticas->entrenadores_totales == 1, "La cantidad de entrenadores totales es 1");
+    pa2m_afirmar(estadisticas->entrenadores_atendidos == 1 , "La cantidad de entrenadores atendidos es 1");
+    pa2m_afirmar(estadisticas->pokemon_totales == 3, "La cantidad de pokemones totales es 3");
+    pa2m_afirmar(estadisticas->pokemon_atendidos == 0, "La cantidad de pokemones atendidos es 0");
+    pa2m_afirmar(estadisticas->pokemon_en_espera == 2 , "La cantidad de pokemon en espera es 2 (lapras no está en espera, está siendo atendido)");
+    pa2m_afirmar(estadisticas->puntos == 0 , "La cantidad de puntos es 0");
+
+    pa2m_afirmar(simulador_simular_evento(simulador, AtenderProximoEntrenador, NULL) == ErrorSimulacion, "Atender proximo entrenador devuelve ErrorSimulación (no hay mas entrenadores)");
+
+    pa2m_afirmar(simulador_simular_evento(simulador,FinalizarSimulacion,NULL) == ExitoSimulacion, "Finalizar simulacion retorna ExitoSimulacion");
+  
     free(info);
+    free(estadisticas);
     simulador_destruir(simulador);
 }
 
@@ -697,9 +763,10 @@ void SePuedeAvidinarElNivel_Correctamente(){
     pa2m_afirmar(simulador_simular_evento(simulador, ObtenerEstadisticas, estadisticas) == ExitoSimulacion, "Obtener las estadisticas devuelve ExitoSimulacion");
     pa2m_afirmar(estadisticas->cantidad_eventos_simulados == 9, "La cantidad de eventos simulados es 9");
     pa2m_afirmar(estadisticas->entrenadores_totales == 1, "La cantidad de entrenadores es 1");
-    pa2m_afirmar(estadisticas->entrenadores_atendidos == 0, "La cantidad de entrenadores atendidos es 0"); //! FIX ME
+    pa2m_afirmar(estadisticas->entrenadores_atendidos == 1, "La cantidad de entrenadores atendidos es 1");
     pa2m_afirmar(estadisticas->pokemon_totales == 3, "La cantidad de pokemon totales es 3");
     pa2m_afirmar(estadisticas->pokemon_atendidos == 1, "La cantidad de pokemon atendidos es 1");
+
     pa2m_afirmar(estadisticas->pokemon_en_espera == 1, "La cantidad de pokemon en espera es 1 (uno está en el consultorio)");
     pa2m_afirmar(estadisticas->puntos > 0, "La cantidad de puntos es mayor a 0");
 
@@ -726,9 +793,9 @@ void SePuedeAvidinarElNivel_Correctamente(){
     pa2m_afirmar(simulador_simular_evento(simulador, ObtenerEstadisticas, estadisticas) == ExitoSimulacion, " Obtener estadísticas devuelve ExitoSimulacion");
     pa2m_afirmar(estadisticas->cantidad_eventos_simulados == 14, "La cantidad de eventos simulados es 14");
     pa2m_afirmar(estadisticas->entrenadores_totales == 1, "La cantidad de entrenadores es 1");
-    pa2m_afirmar(estadisticas->entrenadores_atendidos == 0, "La cantidad de entrenadores atendidos es 0");
+    pa2m_afirmar(estadisticas->entrenadores_atendidos == 1, "La cantidad de entrenadores atendidos es 1");
     pa2m_afirmar(estadisticas->pokemon_totales == 3, "La cantidad de pokemon totales es 3");
-    pa2m_afirmar(estadisticas->pokemon_atendidos == 1, "La cantidad de pokemon atendidos es 1");
+    pa2m_afirmar(estadisticas->pokemon_atendidos == 3, "La cantidad de pokemon atendidos es 3");
     pa2m_afirmar(estadisticas->pokemon_en_espera == 0, "La cantidad de pokemon en espera es 0");
     pa2m_afirmar(estadisticas->puntos > guardar_estado_puntos, "La cantidad de puntos es mayor que antes");
 
@@ -737,6 +804,182 @@ void SePuedeAvidinarElNivel_Correctamente(){
     free(intento);
     free(info);
     free(estadisticas);
+    simulador_destruir(simulador);
+}
+
+void SePuedeOperarConHospitalConVariosEntrenadores_Correctamente(){
+    hospital_t* hospital = hospital_crear();
+
+    pa2m_afirmar(hospital_leer_archivo(hospital, "ejemplos/varios_entrenadores_aux.hospital"), "Se pudo leer el archivo");
+    pa2m_afirmar(hospital_leer_archivo(hospital, "ejemplos/invalido_aux_1.hospital"), "Se pudo leer el archivo");
+    pa2m_afirmar(hospital_leer_archivo(hospital, "ejemplos/invalido_aux_2.hospital"), "Se pudo leer el archivo");
+    pa2m_afirmar(hospital_leer_archivo(hospital, "ejemplos/archivo_vacio.hospital"), "Se pudo leer el archivo");
+
+    simulador_t* simulador = simulador_crear(hospital);
+
+    EstadisticasSimulacion* estadisticas = calloc(1,sizeof(EstadisticasSimulacion));
+    if(estadisticas == NULL){
+        pa2m_afirmar(false,"No se pudo crear las estadisticas");
+    }
+
+    pa2m_afirmar(simulador_simular_evento(simulador,ObtenerEstadisticas,estadisticas) == ExitoSimulacion, "Obtener las estadisticas devuelve ExitoSimulacion");
+    pa2m_afirmar(estadisticas->entrenadores_atendidos == 0 , "La cantidad de entrenadores atendidos es 0");
+    pa2m_afirmar(estadisticas->pokemon_totales == 72 , "La cantidad de pokemon totales es 72");
+
+    pa2m_afirmar(simulador_simular_evento(simulador, AtenderProximoEntrenador, NULL) == ExitoSimulacion, "Atender proximo entrenador devuelve ExitoSimulación");
+
+    InformacionPokemon* info_pokemon = calloc(1,sizeof(InformacionPokemon));
+    if(info_pokemon == NULL){
+        pa2m_afirmar(false,"No se pudo crear la informacion del pokemon");
+    }
+
+    pa2m_afirmar(simulador_simular_evento(simulador, ObtenerInformacionPokemonEnTratamiento, info_pokemon) == ExitoSimulacion, "Obtener la informacion del pokemon devuelve ExitoSimulacion");
+    pa2m_afirmar(strcmp(info_pokemon->nombre_pokemon, "rampardos") == 0, "El pokemon que está siendo atendido es el de menor nivel (rampardos)");
+    pa2m_afirmar(strcmp(info_pokemon->nombre_entrenador, "lucas") == 0, "El entrenador de rampardos es lucas");
+
+    pa2m_afirmar(simulador_simular_evento(simulador,ObtenerEstadisticas,estadisticas) == ExitoSimulacion, "Vuelvo a obtener estadísticas, devuelve ExitoSimulacion");
+    pa2m_afirmar(estadisticas->entrenadores_atendidos == 1 , "La cantidad de entrenadores atendidos es 1");
+    pa2m_afirmar(estadisticas->pokemon_atendidos == 0 , "La cantidad de pokemon atendidos es 0");
+    pa2m_afirmar(estadisticas->pokemon_en_espera == 3, "La cantidad de pokemon en espera es 3 (El entrenador tiene 4, uno ya está en el consultorio)");
+    pa2m_afirmar(estadisticas->puntos == 0, "La cantidad de puntos es 0");
+
+    pa2m_afirmar(simulador_simular_evento(simulador, AtenderProximoEntrenador, NULL) == ExitoSimulacion, "Atender proximo entrenador devuelve ExitoSimulación");
+
+    pa2m_afirmar(simulador_simular_evento(simulador,ObtenerInformacionPokemonEnTratamiento,info_pokemon) == ExitoSimulacion, "Obtener la informacion del pokemon devuelve ExitoSimulacion");
+    pa2m_afirmar(strcmp(info_pokemon->nombre_pokemon, "rampardos") == 0, "El pokemon que está siendo atendido sigue siendo rampardos por mas que haya uno de menor nivel");
+    pa2m_afirmar(strcmp(info_pokemon->nombre_entrenador, "lucas") == 0, "El entrenador de rampardos es lucas");
+
+    pa2m_afirmar(simulador_simular_evento(simulador,ObtenerEstadisticas,estadisticas) == ExitoSimulacion, "Vuelvo a obtener estadísticas, devuelve ExitoSimulacion");
+    pa2m_afirmar(estadisticas->entrenadores_atendidos == 2 , "La cantidad de entrenadores atendidos es 2");
+    pa2m_afirmar(estadisticas->pokemon_atendidos == 0 , "La cantidad de pokemon atendidos es 0");
+    pa2m_afirmar(estadisticas->pokemon_en_espera == 7, "La cantidad de pokemon en espera es 7 (ambos entrenadores tienen 4, uno ya está en el consultorio)");
+    pa2m_afirmar(estadisticas->puntos == 0, "La cantidad de puntos es 0");
+
+    Intento* intento = calloc(1,sizeof(Intento));
+    if(intento == NULL){
+        pa2m_afirmar(false,"No se pudo crear el intento");
+    }
+
+    intento->nivel_adivinado = 10;
+
+    pa2m_afirmar(simulador_simular_evento(simulador, AdivinarNivelPokemon, intento) == ExitoSimulacion, "Adivino el nivel del pokemon y devuelve ExitoSimulacion");
+    pa2m_afirmar(intento->es_correcto, "El nivel  es el correcto");
+    pa2m_afirmar(intento->resultado_string != NULL, "El string con la descripcion del resultado no es null");
+
+    pa2m_afirmar(simulador_simular_evento(simulador, ObtenerInformacionPokemonEnTratamiento, info_pokemon) == ExitoSimulacion, "Obtener la informacion del pokemon devuelve ExitoSimulacion");
+    pa2m_afirmar(strcmp(info_pokemon->nombre_pokemon, "toxicroak") == 0, "El pokemon que está siendo atendido es toxicroak");
+    pa2m_afirmar(strcmp(info_pokemon->nombre_entrenador, "valen") == 0, "El entrenador de toxicroak es valen");
+
+    intento->nivel_adivinado = 20;
+    pa2m_afirmar(simulador_simular_evento(simulador, AdivinarNivelPokemon, intento) == ExitoSimulacion, "Adivino el nivel del pokemon y devuelve ExitoSimulacion");
+    pa2m_afirmar(intento->es_correcto, "El nivel  es el correcto");
+    pa2m_afirmar(intento->resultado_string != NULL, "El string con la descripcion del resultado no es null");
+
+    pa2m_afirmar(simulador_simular_evento(simulador, ObtenerInformacionPokemonEnTratamiento, info_pokemon) == ExitoSimulacion, "Obtener la informacion del pokemon devuelve ExitoSimulacion");
+    pa2m_afirmar(strcmp(info_pokemon->nombre_pokemon, "miltank") == 0, "El pokemon que está siendo atendido es miltank");
+    pa2m_afirmar(strcmp(info_pokemon->nombre_entrenador, "valen") == 0, "El entrenador de miltank es valen");
+
+    pa2m_afirmar(simulador_simular_evento(simulador, ObtenerEstadisticas, estadisticas) == ExitoSimulacion, "Vuelvo a obtener estadísticas, devuelve ExitoSimulacion");
+    pa2m_afirmar(estadisticas->pokemon_atendidos == 2 , "La cantidad de pokemon atendidos es 2");
+    pa2m_afirmar(estadisticas->pokemon_en_espera == 5, "La cantidad de pokemon en espera es 5");
+    pa2m_afirmar(estadisticas->puntos > 0, "La cantidad de puntos es mayor a 0");
+
+    int loop = 13;
+    while(loop > 0){
+        pa2m_afirmar(simulador_simular_evento(simulador, AtenderProximoEntrenador, NULL) == ExitoSimulacion, "Atender proximo entrenador devuelve ExitoSimulación");
+        loop--;
+    }
+
+    intento->nivel_adivinado = 43;
+
+    pa2m_afirmar(simulador_simular_evento(simulador, AdivinarNivelPokemon, intento) == ExitoSimulacion, "Adivino el nivel del pokemon y devuelve ExitoSimulacion");
+    pa2m_afirmar(intento->es_correcto, "El nivel  es el correcto");
+    pa2m_afirmar(intento->resultado_string != NULL, "El string con la descripcion del resultado no es null");
+
+    pa2m_afirmar(simulador_simular_evento(simulador, ObtenerInformacionPokemonEnTratamiento, info_pokemon) == ExitoSimulacion, "Obtener la informacion del pokemon devuelve ExitoSimulacion");
+    pa2m_afirmar(strcmp(info_pokemon->nombre_pokemon, "flareon") == 0, "El pokemon que está siendo atendido es flareon");
+    pa2m_afirmar(strcmp(info_pokemon->nombre_entrenador, "tomas") == 0, "El entrenador de flareon es tomas");
+
+    intento->nivel_adivinado = 1;
+
+    pa2m_afirmar(simulador_simular_evento(simulador, AdivinarNivelPokemon, intento) == ExitoSimulacion, "Adivino el nivel del pokemon y devuelve ExitoSimulacion");
+    pa2m_afirmar(intento->es_correcto, "El nivel  es el correcto");
+    pa2m_afirmar(intento->resultado_string != NULL, "El string con la descripcion del resultado no es null");
+
+    pa2m_afirmar(simulador_simular_evento(simulador, FinalizarSimulacion, NULL) == ExitoSimulacion, "Finalizar simulación devuelve ExitoSimulacion");
+
+    free(intento);
+    free(info_pokemon);
+    free(estadisticas);
+    simulador_destruir(simulador);
+}
+
+void SePuedeOperarConDificultad_Correctamente(){
+    hospital_t* hospital = hospital_crear();
+
+    hospital_leer_archivo(hospital,"ejemplos/un_entrenador.hospital");
+
+    simulador_t* simulador = simulador_crear(hospital);
+
+    DatosDificultad* nueva_dificultad = calloc(1,sizeof(DatosDificultad));
+    if(nueva_dificultad == NULL){
+        pa2m_afirmar(false,"No se pudo crear la estadisticas");
+    }
+
+    nueva_dificultad->nombre = "Hardcore";
+    nueva_dificultad->calcular_puntaje = calcular_puntaje_hardcore;
+    nueva_dificultad->verificar_nivel = verificar_nivel_hardcore;
+    nueva_dificultad->verificacion_a_string = verificacion_string_hardcore;
+
+    pa2m_afirmar(simulador_simular_evento(simulador, AgregarDificultad, nueva_dificultad) == ExitoSimulacion, "Agrego nueva dificultad y retorna ExitoSimulacion (¿Lo copiaste?)");
+
+    pa2m_afirmar(simulador_simular_evento(simulador, AtenderProximoEntrenador, NULL) == ExitoSimulacion, "Atender proximo entrenador devuelve ExitoSimulación");
+
+    int id_dificultad = 3;
+
+    pa2m_afirmar(simulador_simular_evento(simulador, SeleccionarDificultad, &id_dificultad) == ExitoSimulacion, "Puedo seleccionar la nueva dificultad");
+
+    InformacionDificultad* info = calloc(1,sizeof(InformacionDificultad));
+    if(info == NULL){
+        pa2m_afirmar(false,"No se pudo crear la estadisticas");
+    }
+
+    info->id = id_dificultad;
+
+    pa2m_afirmar(simulador_simular_evento(simulador, ObtenerInformacionDificultad, info) == ExitoSimulacion, "Puedo obtener la informacion de la nueva dificultad");
+    pa2m_afirmar(info->en_uso, "La dificultad figura como en uso");
+    pa2m_afirmar(strcmp(info->nombre_dificultad, "Hardcore") == 0, "La dificultad tiene el nombre correcto");
+
+    Intento* intento = calloc(1,sizeof(Intento));
+    if(intento == NULL){
+        pa2m_afirmar(false,"No se pudo crear la estadisticas");
+    }
+
+    intento->nivel_adivinado = 1;
+
+    pa2m_afirmar(simulador_simular_evento(simulador, AdivinarNivelPokemon, intento) == ExitoSimulacion, "Adivino el nivel del pokemon y devuelve ExitoSimulacion");
+    pa2m_afirmar(!intento->es_correcto, "El nivel no es el correcto");
+    pa2m_afirmar(strcmp(intento->resultado_string, "Incorrecto") == 0, "El string con la descripcion del resultado es el esperado");
+
+    intento->nivel_adivinado = 45;
+
+    pa2m_afirmar(simulador_simular_evento(simulador, AdivinarNivelPokemon, intento) == ExitoSimulacion, "Adivino el nivel del pokemon y devuelve ExitoSimulacion");
+    pa2m_afirmar(!intento->es_correcto, "El nivel no es el correcto");
+    pa2m_afirmar(strcmp(intento->resultado_string, "Incorrecto") == 0, "El string con la descripcion del resultado es el esperado");
+
+    intento->nivel_adivinado = 40;
+
+    pa2m_afirmar(simulador_simular_evento(simulador, AdivinarNivelPokemon, intento) == ExitoSimulacion, "Adivino el nivel del pokemon y devuelve ExitoSimulacion");
+    pa2m_afirmar(intento->es_correcto, "El nivel es el correcto");
+    pa2m_afirmar(strcmp(intento->resultado_string, "Correcto") == 0, "El string con la descripcion del resultado es el esperado");
+
+    pa2m_afirmar(simulador_simular_evento(simulador, AdivinarNivelPokemon, intento) == ExitoSimulacion, "Adivino el nivel del pokemon y devuelve ExitoSimulacion");
+
+    pa2m_afirmar(simulador_simular_evento(simulador, FinalizarSimulacion, NULL) == ExitoSimulacion, "Finalizar la simulación devuelve ExitoSimulacion");
+
+    free(info);
+    free(nueva_dificultad);
+    free(intento);
     simulador_destruir(simulador);
 }
 
@@ -770,14 +1013,23 @@ int main(){
     NoSePuedeObtenerDificultadInexistente();
     SePuedeObtenerDificultad_Correctamente();
 
+    pa2m_nuevo_grupo("Pruebas de heap con varios entrenadores");
+    SePuedeExtraerDelHeapEnOrden_Correctamente();
+
     pa2m_nuevo_grupo("Pruebas con hospital vacio - Recreacion Chanutron");
     SePuedeOperarConHospitalVacio_Correctamente();
-
+ 
     pa2m_nuevo_grupo("Pruebas con hospital con 1 entrenador - Recreacion Chanutron");
     SePuedeOperarConHospitalConUnEntrenador_Correctamente();
 
-    pa2m_nuevo_grupo("Pruebas de avidinar el nivel - Recreacion Chanutron");
+    pa2m_nuevo_grupo("Pruebas de adivinar el nivel - Recreacion Chanutron");
     SePuedeAvidinarElNivel_Correctamente();
+
+    pa2m_nuevo_grupo("Pruebas con hospital con varios entrenadores - Recreacion Chanutron");
+    SePuedeOperarConHospitalConVariosEntrenadores_Correctamente();
+
+    pa2m_nuevo_grupo("Pruebas de dificultad - Recreacion Chanutron");
+    SePuedeOperarConDificultad_Correctamente();
 
     return pa2m_mostrar_reporte();
 }

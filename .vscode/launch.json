@@ -28,10 +28,10 @@
             "miDebuggerArgs": "-wall -werror -wconversion -std=c99;-q -ex quit; wait() { fg >/dev/null; }; /bin/gdb -q --interpreter=mi"
         },
         {
-            "name": "TP2 - Hospital",
+            "name": "TP2 - main",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/TP2/pruebas_hospital",
+            "program": "${workspaceFolder}/TP2/main",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

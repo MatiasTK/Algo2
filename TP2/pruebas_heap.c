@@ -1,14 +1,12 @@
 #include "pa2mm.h"
-#include "src/heap.h"
+#include "../src/heap.h"
 #include <stdio.h>
+#include "../src/estructura_aux.h"
+#include "../src/hospital.h"
+#include <string.h>
 
 #define EXITO 0
 #define ERROR -1
-
-typedef struct pokemones{
-    int nivel;
-    char* nombre;
-} pokemones_t;
 
 int comparador_numeros(void* n1,void* n2) {
     int a = *(int*)n1;
@@ -26,16 +24,21 @@ void probar_destructor(void* elemento){
     printf("Se invoco al destructor\n");
 }
 
-int comparador_niveles(void* n1,void* n2) {
-    pokemones_t* a = (pokemones_t*)n1;
-    pokemones_t* b = (pokemones_t*)n2;
+/*
+* PRE: Recibe dos pokemones validos.
+* POST: Devuelve un numero entero positivo si el primer pokemon tiene mas nivel que el segundo, un negativo si el primero tiene menos nivel o 0 si tienen el mismo nivel.
+*/
+int comparador_niveles_heap(void* p1, void* p2){
+    pokemon_t* pokemon1 = (pokemon_t*)p1;
+    pokemon_t* pokemon2 = (pokemon_t*)p2;
 
-    if (a->nivel < b->nivel)
-        return -1;
-    else if (a->nivel > b->nivel)
+    if(pokemon1->nivel > pokemon2->nivel){
         return 1;
-    else
+    }else if(pokemon1->nivel < pokemon2->nivel){
+        return -1;
+    }else{
         return 0;
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -140,27 +143,87 @@ void SePuedeOperarConVariosElementos(){
     heap_destruir(heap);
 }
 
-void PruebasVariasTP(){
-    heap_t* heap = heap_crear(comparador_niveles, NULL);
+size_t agregar_pokemones_heap(hospital_t* hospital,heap_t* heap){
+    if(!hospital){
+        return 0;
+    }
 
-    pokemones_t p1 = {50, "Pikachu"};
-    pokemones_t p2 = {25, "Charmander"};
-    pokemones_t p3 = {100, "Bulbasaur"};
+    size_t cantidad_agregados = 0;
+
+    lista_iterador_t* iterador = lista_iterador_crear(hospital->lista_entrenadores);
+    if(!iterador){
+        return 0;
+    }
+
+
+    while(lista_iterador_tiene_siguiente(iterador)){
+        entrenador_t* entrenador = lista_iterador_elemento_actual(iterador);
+        if(!entrenador){
+            lista_iterador_destruir(iterador);
+            return 0;
+        }
+
+        lista_iterador_t* iterador_pokemones = lista_iterador_crear(entrenador->lista_pokemones);
+        if(!iterador_pokemones){
+            lista_iterador_destruir(iterador);
+            return 0;
+        }
+
+        while(lista_iterador_tiene_siguiente(iterador_pokemones)){
+            pokemon_t* pokemon = lista_iterador_elemento_actual(iterador_pokemones);
+            if(!pokemon){
+                lista_iterador_destruir(iterador_pokemones);
+                lista_iterador_destruir(iterador);
+                return 0;
+            }
+
+            heap_insertar(heap, pokemon);
+            cantidad_agregados++;
+            lista_iterador_avanzar(iterador_pokemones);
+        }
+        lista_iterador_destruir(iterador_pokemones);
+        
+        lista_iterador_avanzar(iterador);
+    }
+
+    lista_iterador_destruir(iterador);
+
+    return cantidad_agregados;
+}
+
+void PruebasVariasTP(){
+    heap_t* heap = heap_crear(comparador_niveles_heap, NULL);
+
+    hospital_t* hospital = hospital_crear();
+    if(!hospital){
+        return;
+    }
+
+    pa2m_afirmar(hospital_leer_archivo(hospital, "ejemplos/varios_entrenadores.hospital"), "Se pudo leer el archivo");
 
     pa2m_afirmar(heap != NULL, "Se puede crear un heap exitosamente");
 
-    pa2m_afirmar(heap_insertar(heap, &p1) == EXITO, "Puedo insertar a Pikachu con nivel 50");
-    pa2m_afirmar(heap_insertar(heap, &p2) == EXITO, "Puedo insertar a Charmander con nivel 25");
-    pa2m_afirmar(heap_insertar(heap, &p3) == EXITO, "Puedo insertar a Bulbasaur con nivel 100");
+    pa2m_afirmar(heap_cantidad(heap)==0, "La cantidad del heap es 0");
+    
+    size_t cargados = agregar_pokemones_heap(hospital, heap);
 
-    pa2m_afirmar(heap_cantidad(heap)==3, "La cantidad del heap es 3");
-    pa2m_afirmar(heap_extraer_raiz(heap) == &p2, "Se extrae Charmander");
-    pa2m_afirmar(heap_extraer_raiz(heap) == &p1, "Se extrae Pikachu");
-    pa2m_afirmar(heap_extraer_raiz(heap) == &p3, "Se extrae Bulbasaur");
+    pa2m_afirmar(cargados == 24 , "Se cargaron 24 pokemones");
+    pa2m_afirmar(heap_cantidad(heap)==24, "La cantidad del heap es 24");
+    
+    char* pokemones_extraidos[24] = {"rampardos","venonat","toxicroak","charizard","mothim","luxio","shieldon","hitmonlee","tyranitar","delcatty","munchlax","groudon","torkal","kecleon","swinub","miltank","kabuto","kingdra","magnemite","shuckle","alcremie","duskull","flareon","eternatus"};	
+    int i = 0;
+
+    while(cargados > 0){
+        pokemon_t* pokemon = heap_extraer_raiz(heap);
+        pa2m_afirmar(strcmp(pokemon->nombre, pokemones_extraidos[i]) == 0, "Se extrae la raiz correctamente");
+        i++;
+        cargados--;
+    }
 
     pa2m_afirmar(heap_cantidad(heap)==0, "La cantidad del heap es 0");
 
     heap_destruir(heap);
+    hospital_destruir(hospital);
 }
 
 int main(){

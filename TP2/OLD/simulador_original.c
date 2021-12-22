@@ -3,7 +3,11 @@
 #include "lista.h"
 #include "heap.h"
 #include "estructura_aux.h"
-#include <string.h>
+
+#include <stdio.h> //! TESTING
+#include <string.h> //! TESTING
+
+#define COLOR_ERROR printf("\033[91m EL ERROR ESTUVO AQUI! \033[0m\n");
 
 #define EXITO 0
 #define ERROR -1
@@ -13,20 +17,18 @@
 #define BONUS_NORMAL 20
 #define BONUS_DIFICIL 50
 
-#define ID_DIFICULTAD_CUSTOM_INICIAL 3
-
 struct _simulador_t{
-
     hospital_t* hospital;
+    EstadisticasSimulacion* estadisticas; //? No es necesario? -> Este lo estoy usando
+    InformacionPokemon* info_pokemon; //? No es necesario? -> Este lo estoy usando
     heap_t* cola_espera;
-
-    EstadisticasSimulacion* estadisticas; 
-    InformacionPokemon* informacion_pokemon_actual; 
+    size_t id_ultimo_entrenador;
+    Intento* intento_actual; //? No es necesario?
+    DatosDificultad* datos_dificultad; //? No es necesario?
     lista_t* lista_dificultades;
-
-    unsigned int cantidad_intentos;
-    size_t dificultad_siguiente_id_disponible;
     bool simulacion_finalizada;
+    size_t dificultad_siguiente_id_disponible;
+    unsigned int cantidad_intentos;
 };
 
 typedef struct dificultades{
@@ -52,9 +54,19 @@ int comparador_niveles(void* p1, void* p2){
 }
 
 /*
-* PRE: Recibe cantidad_intentos que tiene que ser un numero entero positivo.
-* POST: Devuelve los puntajes calculados en base a la cantidad de intentos en la dificultad facil.
+* PRE: Recibe un simulador valido.
+* POST: Libera toda la memoria reservada para el simulador si algo falla.
 */
+void liberar_en_caso_error(simulador_t* simulador){
+    free(simulador->estadisticas);
+    free(simulador->info_pokemon);
+    free(simulador->cola_espera);
+    free(simulador->intento_actual);
+    free(simulador->datos_dificultad);
+    free(simulador->hospital);
+    free(simulador);
+}
+
 unsigned calcular_puntaje_facil(unsigned cantidad_intentos){
     if(cantidad_intentos > PUNTOS_BASE){
         cantidad_intentos = PUNTOS_BASE;
@@ -63,10 +75,6 @@ unsigned calcular_puntaje_facil(unsigned cantidad_intentos){
     return PUNTOS_BASE - cantidad_intentos;
 }
 
-/*
-* PRE: Recibe cantidad_intentos que tiene que ser un numero entero positivo.
-* POST: Devuelve los puntajes calculados en base a la cantidad de intentos en la dificultad normal.
-*/
 unsigned calcular_puntaje_normal(unsigned cantidad_intentos){
     if(cantidad_intentos > PUNTOS_BASE){
         cantidad_intentos = PUNTOS_BASE;
@@ -75,10 +83,6 @@ unsigned calcular_puntaje_normal(unsigned cantidad_intentos){
     return (PUNTOS_BASE - cantidad_intentos) + BONUS_NORMAL;
 }
 
-/*
-* PRE: Recibe cantidad_intentos que tiene que ser un numero entero positivo.
-* POST: Devuelve los puntajes calculados en base a la cantidad de intentos en la dificultad dificil.
-*/
 unsigned calcular_puntaje_dificil(unsigned cantidad_intentos){
     if(cantidad_intentos > PUNTOS_BASE){
         cantidad_intentos = PUNTOS_BASE;
@@ -136,9 +140,9 @@ int verificar_nivel_dificil(unsigned nivel_adivinado, unsigned nivel_pokemon){
 const char*verificacion_string_facil(int resultado_verificacion){
     if(resultado_verificacion == 0){
         return "Felicidades, acertaste!!";
-    }else if(resultado_verificacion == -1){
-        return "El numero que estas buscando es mayor";
     }else if(resultado_verificacion == 1){
+        return "El numero que estas buscando es mayor";
+    }else if(resultado_verificacion == -1){
         return "El numero que estas buscando es menor";
     }else{
         return "Error";
@@ -309,14 +313,36 @@ int crear_dificultades_estandar(lista_t* lista){
 }
 
 /*
-* PRE: Recibe un simulador valido.
-* POST: Libera la memoria de un simulador solo en caso de que falle.
+* PRE:
+* POST: Busca el ID del primer entrenador, en caso de error devuelve -1.
 */
-void liberar_en_caso_error(simulador_t* simulador){
-    free(simulador->informacion_pokemon_actual);
-    free(simulador->estadisticas);
-    free(simulador->cola_espera);
-    free(simulador);
+int buscar_id_primer_entrenador(simulador_t* simulador){
+    lista_iterador_t* iterador = lista_iterador_crear(simulador->hospital->lista_pokemones);
+    if(!iterador){
+        return ERROR;
+    }
+
+    pokemon_t* primer_pokemon = lista_iterador_elemento_actual(iterador);
+    if(!primer_pokemon){
+        lista_iterador_destruir(iterador);
+        return ERROR;
+    }
+
+    size_t menor_id = primer_pokemon->entrenador->id;
+    
+    while(lista_iterador_tiene_siguiente(iterador)){
+        pokemon_t* pokemon = lista_iterador_elemento_actual(iterador);
+        if(!pokemon){
+            return ERROR;
+        }
+        if(pokemon->entrenador->id < menor_id){
+            menor_id = pokemon->entrenador->id;
+        }
+        lista_iterador_avanzar(iterador);
+    }
+
+    lista_iterador_destruir(iterador);
+    return (int)menor_id;
 }
 
 simulador_t* simulador_crear(hospital_t* hospital){
@@ -324,100 +350,83 @@ simulador_t* simulador_crear(hospital_t* hospital){
         return NULL;
     }
 
-    simulador_t* simulador = calloc(1, sizeof(simulador_t));
-    if(simulador == NULL){
+    simulador_t* simulador = calloc(1,sizeof(simulador_t));
+    if(!simulador){
         return NULL;
     }
 
     simulador->hospital = hospital;
 
-    heap_t* heap = heap_crear(comparador_niveles, NULL);
-    if(heap == NULL){
+    EstadisticasSimulacion* estadisticas = calloc(1,sizeof(EstadisticasSimulacion));
+    if(!estadisticas){
         liberar_en_caso_error(simulador);
         return NULL;
     }
 
-    simulador->cola_espera = heap;
-
-    EstadisticasSimulacion* estadisticas = calloc(1, sizeof(EstadisticasSimulacion));
-    if(estadisticas == NULL){
-        liberar_en_caso_error(simulador);
-        return NULL;
-    }
-
-    estadisticas->cantidad_eventos_simulados = 0;
     estadisticas->entrenadores_atendidos = 0;
     estadisticas->entrenadores_totales = (unsigned)hospital_cantidad_entrenadores(hospital);
     estadisticas->pokemon_atendidos = 0;
     estadisticas->pokemon_en_espera = 0;
     estadisticas->pokemon_totales = (unsigned)hospital_cantidad_pokemon(hospital);
     estadisticas->puntos = 0;
+    estadisticas->cantidad_eventos_simulados = 0;
 
     simulador->estadisticas = estadisticas;
 
-    InformacionPokemon* info_pokemon = calloc(1, sizeof(InformacionPokemon));
-    if(info_pokemon == NULL){
+    heap_t* heap = heap_crear(comparador_niveles,NULL);
+    if(!heap){
         liberar_en_caso_error(simulador);
         return NULL;
     }
 
-    simulador->informacion_pokemon_actual = info_pokemon;
+    simulador->cola_espera = heap;
 
-    lista_t* dificultades = lista_crear();
-    if(dificultades == NULL){
+    InformacionPokemon* Informacion_pokemon = calloc(1,sizeof(InformacionPokemon));
+    if(!Informacion_pokemon){
         liberar_en_caso_error(simulador);
-        lista_destruir(dificultades);
         return NULL;
     }
 
-    simulador->lista_dificultades = dificultades;
+    simulador->info_pokemon = Informacion_pokemon;
+
+    Intento* intento = calloc(1,sizeof(Intento));
+    if(!intento){
+        liberar_en_caso_error(simulador);
+        return NULL;
+    }
+    
+    simulador->intento_actual = intento;
+
+    DatosDificultad* datos_dificultad = calloc(1,sizeof(DatosDificultad));
+    if(!datos_dificultad){
+        liberar_en_caso_error(simulador);
+        return NULL;
+    }
+
+    datos_dificultad->nombre = "Normal";
+
+    simulador->datos_dificultad = datos_dificultad;
+
+    simulador->lista_dificultades = lista_crear();
+    if(simulador->lista_dificultades == NULL){
+        liberar_en_caso_error(simulador);
+        return NULL;
+    }
 
     int resultado = crear_dificultades_estandar(simulador->lista_dificultades);
     if(resultado == ERROR){
         liberar_en_caso_error(simulador);
-        lista_destruir(dificultades);
         return NULL;
     }
 
-    simulador->cantidad_intentos = 0;
-    simulador->dificultad_siguiente_id_disponible = ID_DIFICULTAD_CUSTOM_INICIAL; 
     simulador->simulacion_finalizada = false;
 
+    simulador->dificultad_siguiente_id_disponible = 3;
+    simulador->cantidad_intentos = 1;
+
+    simulador->id_ultimo_entrenador = (size_t)buscar_id_primer_entrenador(simulador);
+
     return simulador;
-}
-
-/*
-* PRE: Recibe una lista de dificultades y un id para buscar la dificultad.
-* POST: Busca la dificultad en la lista y la devuelve. En caso de error o no encontrarlo devuelve NULL.
-*/
-dificultades_t* buscar_dificultad_por_id(lista_t* lista_dificultades, int id_buscado){
-    if(!lista_dificultades){
-        return NULL;
-    }
-
-    lista_iterador_t* iterador = lista_iterador_crear(lista_dificultades);
-    if(!iterador){
-        return NULL;
-    }
-
-    while(lista_iterador_tiene_siguiente(iterador)){
-
-        dificultades_t* dificultad = lista_iterador_elemento_actual(iterador);
-        if(!dificultad){
-            return NULL;
-        }
-
-        if(dificultad->info_dificultad->id == id_buscado){
-            lista_iterador_destruir(iterador);
-            return dificultad;
-        }
-
-        lista_iterador_avanzar(iterador);
-    }
-
-    lista_iterador_destruir(iterador);
-
-    return NULL;
 }
 
 /*
@@ -455,68 +464,100 @@ dificultades_t* buscar_dificultad_actual(lista_t* lista_dificultades){
 }
 
 /*
-* PRE: Recibe un simulador.
-* POST: Agrega los pokemones del siguiente entrenador a la cola de espera. Devuelve la cantidad de pokemones que fueron agregados.
+* PRE: Recibe una lista de dificultades y un id para buscar la dificultad.
+* POST: Busca la dificultad en la lista y la devuelve. En caso de error o no encontrarlo devuelve NULL.
+*/
+dificultades_t* buscar_dificultad_por_id(lista_t* lista_dificultades, int id_buscado){
+    if(!lista_dificultades){
+        return NULL;
+    }
+
+    lista_iterador_t* iterador = lista_iterador_crear(lista_dificultades);
+    if(!iterador){
+        return NULL;
+    }
+
+    while(lista_iterador_tiene_siguiente(iterador)){
+
+        dificultades_t* dificultad = lista_iterador_elemento_actual(iterador);
+        if(!dificultad){
+            return NULL;
+        }
+
+        if(dificultad->info_dificultad->id == id_buscado){
+            lista_iterador_destruir(iterador);
+            return dificultad;
+        }
+
+        lista_iterador_avanzar(iterador);
+    }
+
+    lista_iterador_destruir(iterador);
+
+    return NULL;
+}
+
+/*
+* PRE: Recibe un simulador y un puntero hacia EstadisticasSimulacion
+* POST: Carga en el puntero recibido las estadisticas actuales del simulador.
+*/
+int simulador_obtener_estadisticas(simulador_t* simulador, void* datos){
+    if(!simulador || !datos){
+        return ERROR;
+    }
+
+    EstadisticasSimulacion* estadisticas_datos = (EstadisticasSimulacion*)datos;
+
+    simulador->estadisticas->cantidad_eventos_simulados++;
+
+    estadisticas_datos->cantidad_eventos_simulados = simulador->estadisticas->cantidad_eventos_simulados;
+    estadisticas_datos->entrenadores_atendidos = simulador->estadisticas->entrenadores_atendidos;
+    estadisticas_datos->entrenadores_totales = simulador->estadisticas->entrenadores_totales;
+    estadisticas_datos->pokemon_atendidos = simulador->estadisticas->pokemon_atendidos;
+    estadisticas_datos->pokemon_en_espera = simulador->estadisticas->pokemon_en_espera;
+    estadisticas_datos->pokemon_totales = simulador->estadisticas->pokemon_totales;
+    estadisticas_datos->puntos = simulador->estadisticas->puntos;
+
+    datos = estadisticas_datos;
+
+    return EXITO;
+}
+
+/*
+* PRE:
+* POST: Agrega los pokemones al heap y devuelve la cantidad de pokemones que agrego, devuelve 0 en caso de error.
 */
 size_t agregar_pokemones_al_heap(simulador_t* simulador){
     if(!simulador){
         return 0;
     }
 
-    size_t cantidad_agregados = 0;
-    size_t recorridos = 0;
+    size_t cantidad = 0;
 
-    lista_iterador_t* iterador = lista_iterador_crear(simulador->hospital->lista_entrenadores);
+    lista_iterador_t* iterador = lista_iterador_crear(simulador->hospital->lista_pokemones);
     if(!iterador){
         return 0;
     }
 
-    while(recorridos != simulador->estadisticas->entrenadores_atendidos){
-        lista_iterador_avanzar(iterador);
-        recorridos++;
-    }
-
     while(lista_iterador_tiene_siguiente(iterador)){
-        entrenador_t* entrenador = lista_iterador_elemento_actual(iterador);
-
-        if(recorridos == simulador->estadisticas->entrenadores_atendidos + 1){
-            break;
-        }
-
-        lista_iterador_t* iterador_pokemones = lista_iterador_crear(entrenador->lista_pokemones);
-        if(!iterador_pokemones){
-            lista_iterador_destruir(iterador);
+        pokemon_t* pokemon = lista_iterador_elemento_actual(iterador);
+        if(!pokemon){
             return 0;
         }
-
-        while(lista_iterador_tiene_siguiente(iterador_pokemones)){
-            pokemon_t* pokemon = lista_iterador_elemento_actual(iterador_pokemones);
-            if(!pokemon){
-                lista_iterador_destruir(iterador_pokemones);
-                lista_iterador_destruir(iterador);
+        if(pokemon->entrenador->id == simulador->id_ultimo_entrenador){
+            int resultado = heap_insertar(simulador->cola_espera,pokemon);
+            if(resultado == ERROR){
                 return 0;
             }
-
-            heap_insertar(simulador->cola_espera, pokemon);
-            cantidad_agregados++;
-            lista_iterador_avanzar(iterador_pokemones);
+            cantidad++;
         }
-
-        lista_iterador_destruir(iterador_pokemones);
-
-        recorridos++;
         lista_iterador_avanzar(iterador);
     }
-
     lista_iterador_destruir(iterador);
 
-    return cantidad_agregados;
+    return cantidad;
 }
 
-/*
-* PRE: Recibe un simulador.
-* POST: Quita un pokemon de la cola de espera y lo transfiere a pokemon en tratamiento. Devuelve -1 en caso de error o 0 en caso de exito.
-*/
 int atender_proximo_pokemon(simulador_t* simulador){
     if(!simulador){
         return ERROR;
@@ -531,12 +572,70 @@ int atender_proximo_pokemon(simulador_t* simulador){
         return ERROR;
     }
 
-    entrenador_t* entrenador = pokemon_entrenador(pokemon);
-
-    simulador->informacion_pokemon_actual->nombre_pokemon = pokemon_nombre(pokemon);
-    simulador->informacion_pokemon_actual->nombre_entrenador = entrenador->nombre;
+    simulador->info_pokemon->nombre_pokemon = pokemon->nombre;
+    simulador->info_pokemon->nombre_entrenador = pokemon->entrenador->nombre;
 
     simulador->estadisticas->pokemon_en_espera--;
+
+    return EXITO;
+}
+
+/*
+* PRE: Recibe un simulador valido.
+* POST: Atiende al proximo entrenador poniendo a sus pokemones en la lista de espera.
+*/
+int simulador_atender_proximo_entrenador(simulador_t* simulador){
+    if(!simulador){
+        return ERROR;
+    }
+
+    if(simulador->estadisticas->entrenadores_atendidos >= simulador->estadisticas->entrenadores_totales){
+        return ERROR;
+    }
+
+    size_t cantidad_agregada = agregar_pokemones_al_heap(simulador);
+    if(cantidad_agregada == 0){
+        return ERROR;
+    }
+
+    simulador->estadisticas->pokemon_en_espera += (unsigned)cantidad_agregada;
+    simulador->estadisticas->entrenadores_atendidos++;
+    simulador->id_ultimo_entrenador++;
+
+    if(!simulador->info_pokemon->nombre_pokemon){
+        int resultado = atender_proximo_pokemon(simulador);
+        if(resultado == ERROR){
+            return ERROR;
+        }
+    }
+
+    return EXITO;
+}
+
+/*
+* PRE: Recibe un simulador valido y un puntero a InformacionPokemon* 
+* POST: LLena el puntero recibido con la informacion del pokemon que esta siendo tratado.
+*/
+int simulador_obtener_informacion_pokemon_en_tratamiento(simulador_t* simulador, void* datos){
+    if(!simulador || !datos){
+        return ERROR;
+    }
+
+    if(!simulador->info_pokemon->nombre_pokemon){
+        return ERROR;
+    }
+
+    InformacionPokemon* informacion = (InformacionPokemon*)datos;
+
+    if(simulador->estadisticas->pokemon_totales == simulador->estadisticas->pokemon_atendidos){
+        informacion->nombre_entrenador = NULL;
+        informacion->nombre_pokemon = NULL;
+        return ERROR;
+    }
+
+
+    informacion->nombre_pokemon = simulador->info_pokemon->nombre_pokemon;
+    informacion->nombre_entrenador = simulador->info_pokemon->nombre_entrenador;
 
     return EXITO;
 }
@@ -550,42 +649,31 @@ int buscar_nivel_pokemon(simulador_t* simulador,const char* nombre_pokemon, cons
         return ERROR;
     }
 
-    lista_iterador_t* iterador = lista_iterador_crear(simulador->hospital->lista_entrenadores);
+    lista_iterador_t* iterador = lista_iterador_crear(simulador->hospital->lista_pokemones);
     if(!iterador){
         return ERROR;
     }
 
     while(lista_iterador_tiene_siguiente(iterador)){
-        entrenador_t* entrenador = lista_iterador_elemento_actual(iterador);
-        if(!entrenador){
+        pokemon_t* pokemon = lista_iterador_elemento_actual(iterador);
+        if(!pokemon){
             return ERROR;
         }
 
-        lista_iterador_t* iterador_pokemon = lista_iterador_crear(entrenador->lista_pokemones);
-        if(!iterador_pokemon){
-            lista_iterador_destruir(iterador);
-            return ERROR;
-        }
-
-        while(lista_iterador_tiene_siguiente(iterador_pokemon)){
-            pokemon_t* pokemon = lista_iterador_elemento_actual(iterador_pokemon);
-            if(!pokemon){
-                lista_iterador_destruir(iterador_pokemon);
-                lista_iterador_destruir(iterador);
-                return ERROR;
+        if(nombre_entrenador != NULL){
+            entrenador_t* entrenador = pokemon_entrenador(pokemon);
+            if(strcmp(entrenador->nombre,nombre_entrenador) == 0){
+                if(strcmp(pokemon_nombre(pokemon),nombre_pokemon) == 0){
+                    lista_iterador_destruir(iterador);
+                    return (int)pokemon_nivel(pokemon);
+                }
             }
-
-            if(strcmp(pokemon_nombre(pokemon), nombre_pokemon) == 0 && strcmp(entrenador->nombre, nombre_entrenador) == 0){
-                lista_iterador_destruir(iterador_pokemon);
+        }else{
+            if(strcmp(pokemon_nombre(pokemon),nombre_pokemon) == 0){
                 lista_iterador_destruir(iterador);
                 return (int)pokemon_nivel(pokemon);
             }
-
-            lista_iterador_avanzar(iterador_pokemon);
         }
-
-        lista_iterador_destruir(iterador_pokemon);
-
         lista_iterador_avanzar(iterador);
     }
 
@@ -594,88 +682,8 @@ int buscar_nivel_pokemon(simulador_t* simulador,const char* nombre_pokemon, cons
     return ERROR;
 }
 
-/*
-* PRE: Recibe un EstadisticasSimulacion* inicializado.
-* POST: Llena las estadisticas recibidas con las estadisticas actuales del simulador. Devuelve -1 en caso de error o 0 en caso de exito.
-*/
-int simulador_obtener_estadisticas(simulador_t* simulador,void* datos){
-    if(!simulador || !datos){
-        return ERROR;
-    }
 
-    EstadisticasSimulacion* estadisticas_recibidas = (EstadisticasSimulacion*)datos;
-
-    simulador->estadisticas->cantidad_eventos_simulados++;
-
-    estadisticas_recibidas->cantidad_eventos_simulados = simulador->estadisticas->cantidad_eventos_simulados;
-    estadisticas_recibidas->entrenadores_atendidos = simulador->estadisticas->entrenadores_atendidos;
-    estadisticas_recibidas->entrenadores_totales = simulador->estadisticas->entrenadores_totales;
-    estadisticas_recibidas->pokemon_atendidos = simulador->estadisticas->pokemon_atendidos;
-    estadisticas_recibidas->pokemon_en_espera = simulador->estadisticas->pokemon_en_espera;
-    estadisticas_recibidas->pokemon_totales = simulador->estadisticas->pokemon_totales;
-    estadisticas_recibidas->puntos = simulador->estadisticas->puntos;
-
-
-    return EXITO;
-}
-
-/*
-* PRE: Recibe un simulador.
-* POST: Atiende al proximo entrenador en el hospital, transfiere sus pokemones a la cola de espera y si no hay ninguno siendo tratado trata al de menor nivel. Devuelve -1 en caso de error o 0 en caso de exito.
-*/
-int simulador_atender_proximo_entrenador(simulador_t* simulador){
-    if(!simulador){
-        return ERROR;
-    }
-
-    if(simulador->estadisticas->entrenadores_atendidos == simulador->estadisticas->entrenadores_totales){
-        return ERROR;
-    }
-
-    size_t cantidad_agregada = agregar_pokemones_al_heap(simulador);
-
-    simulador->estadisticas->pokemon_en_espera += (unsigned int)cantidad_agregada;
-
-    if(simulador->estadisticas->entrenadores_atendidos == 0){
-        int resultado = atender_proximo_pokemon(simulador);
-        if(resultado == ERROR){
-            return ERROR;
-        }
-    } 
-
-    simulador->estadisticas->entrenadores_atendidos++;
-
-    return EXITO;
-}
-
-/*
-* PRE: Recibe un InformacionPokemon* inicializado.
-* POST: Llena la informacion recibida con la informacion del pokemon actual.En caso de que no haya ninguno llena la estructura con NULL.Devuelve -1 en caso de error o 0 en caso de exito.
-*/
-int simulador_obtener_informacion_pokemon_en_tratamiento(simulador_t* simulador,void* datos){
-    if(!simulador || !datos){
-        return ERROR;
-    }
-
-    InformacionPokemon* info_pokemon_recibida = (InformacionPokemon*)datos;
-
-    if(simulador->estadisticas->pokemon_totales == simulador->estadisticas->pokemon_atendidos){ 
-        info_pokemon_recibida->nombre_pokemon = NULL;
-        info_pokemon_recibida->nombre_entrenador = NULL;
-        return ERROR;
-    }
-
-    info_pokemon_recibida->nombre_entrenador = simulador->informacion_pokemon_actual->nombre_entrenador;
-    info_pokemon_recibida->nombre_pokemon = simulador->informacion_pokemon_actual->nombre_pokemon;
-
-    return EXITO;   
-}
-
-/*
-* PRE: Recibe un Intento* inicializado con el nivel_adivinado.
-* POST: Llena las estructura recibida con la informacion del intento actual. Si el intento fue correcto atiende al proximo pokemon. Devuelve -1 en caso de error o 0 en caso de exito.
-*/
-int simulador_adivinar_nivel_pokemon(simulador_t* simulador,void* datos){
+int simulador_adivinar_nivel_pokemon(simulador_t* simulador, void* datos){ 
     if(!simulador || !datos){
         return ERROR;
     }
@@ -684,169 +692,133 @@ int simulador_adivinar_nivel_pokemon(simulador_t* simulador,void* datos){
         return ERROR;
     }
 
+    Intento* intento = (Intento*)datos;
+
     dificultades_t* dificultad_actual = buscar_dificultad_actual(simulador->lista_dificultades);
     if(!dificultad_actual){
         return ERROR;
     }
-
-    Intento* intento_recibido = (Intento*)datos;
-
-    unsigned int nivel_pokemon_en_tratamiento = (unsigned int)buscar_nivel_pokemon(simulador, simulador->informacion_pokemon_actual->nombre_pokemon, simulador->informacion_pokemon_actual->nombre_entrenador);
-    if(nivel_pokemon_en_tratamiento == ERROR){
+ 
+    unsigned int nivel_pokemon = (unsigned int)buscar_nivel_pokemon(simulador,simulador->info_pokemon->nombre_pokemon,simulador->info_pokemon->nombre_entrenador);
+    if(nivel_pokemon == ERROR){
         return ERROR;
     }
 
-    int resultado_verificacion = dificultad_actual->datos_dificultad->verificar_nivel(intento_recibido->nivel_adivinado, nivel_pokemon_en_tratamiento);
+    int resultado_verificacion = dificultad_actual->datos_dificultad->verificar_nivel(intento->nivel_adivinado,nivel_pokemon);
 
     if(resultado_verificacion == 0){
-        intento_recibido->es_correcto = true;
+        intento->es_correcto = true;
     }else{
-        intento_recibido->es_correcto = false;
+        intento->es_correcto = false;
     }
 
-    intento_recibido->resultado_string = dificultad_actual->datos_dificultad->verificacion_a_string(resultado_verificacion);
+    intento->resultado_string = dificultad_actual->datos_dificultad->verificacion_a_string(resultado_verificacion);
 
-    if(intento_recibido->es_correcto){
-        unsigned int puntos_a_agregar = dificultad_actual->datos_dificultad->calcular_puntaje(simulador->cantidad_intentos);
-        simulador->estadisticas->puntos += puntos_a_agregar;
+    if(intento->es_correcto){
+
+        simulador->estadisticas->puntos += (unsigned int)dificultad_actual->datos_dificultad->calcular_puntaje(simulador->cantidad_intentos);
         simulador->estadisticas->pokemon_atendidos++;
         simulador->cantidad_intentos = 1;
 
-        if(simulador->estadisticas->pokemon_en_espera > 0){
+        if(simulador->estadisticas->pokemon_totales > simulador->estadisticas->pokemon_atendidos){
             int resultado = atender_proximo_pokemon(simulador);
             if(resultado == ERROR){
                 return ERROR;
             }
         }
+
     }else{
         simulador->cantidad_intentos++;
     }
 
     return EXITO;
-}
+}   
 
-/*
-* PRE: Recibe un string.
-* POST: Hace una copia del string en el heap y la devuelve.
-*/
-char* copiar_string(const char* string_a_copiar){
-    if(!string_a_copiar){
-        return NULL;
-    }
-
-    char* string_copiado = malloc(sizeof(char) * (strlen(string_a_copiar) + 1));
-    if(!string_copiado){
-        return NULL;
-    }
-
-    strcpy(string_copiado, string_a_copiar);
-
-    return string_copiado;
-}
-
-/*
-* PRE: Recibe un DatosDificultad* inicializado con los datos de la nueva dificultad a agregar.
-* POST: Agrega la nueva dificultad al simulador. Devuelve -1 en caso de error o 0 en caso de exito.
-*/
-int simulador_agregar_dificultad(simulador_t* simulador,void* datos){
+int simulador_agregar_dificultad(simulador_t* simulador, void* datos){ 
     if(!simulador || !datos){
         return ERROR;
     }
 
-    DatosDificultad* datos_dificultad_recibidos = (DatosDificultad*)datos;
+    DatosDificultad* dificultad_recibida = (DatosDificultad*)datos;
 
-    dificultades_t* nueva_dificultad = calloc(1, sizeof(dificultades_t));
-    if(!nueva_dificultad){
+    dificultades_t* dificultad_nueva = calloc(1,sizeof(dificultades_t));
+    if(!dificultad_nueva){
         return ERROR;
     }
 
-    InformacionDificultad* informacion_dificultad_nueva = calloc(1, sizeof(InformacionDificultad));
-    if(!informacion_dificultad_nueva){
-        free(nueva_dificultad);
+    InformacionDificultad* dificultad_nueva_info = calloc(1,sizeof(InformacionDificultad));
+    if(!dificultad_nueva_info){
+        free(dificultad_nueva);
         return ERROR;
     }
 
-    DatosDificultad* datos_dificultad_nueva = calloc(1, sizeof(DatosDificultad));
-    if(!datos_dificultad_nueva){
-        free(informacion_dificultad_nueva);
-        free(nueva_dificultad);
-        return ERROR;
-    }
+    dificultad_nueva_info->nombre_dificultad = dificultad_recibida->nombre;
+    dificultad_nueva_info->en_uso = false;
+    dificultad_nueva_info->id = (int)simulador->dificultad_siguiente_id_disponible;
 
-    char* nombre_dificultad_nueva = copiar_string(datos_dificultad_recibidos->nombre); 
-
-    informacion_dificultad_nueva->nombre_dificultad = nombre_dificultad_nueva;
-    informacion_dificultad_nueva->en_uso = false;
-    informacion_dificultad_nueva->id = (int)simulador->dificultad_siguiente_id_disponible;
-
-    datos_dificultad_nueva->nombre = nombre_dificultad_nueva;
-    datos_dificultad_nueva->verificar_nivel = datos_dificultad_recibidos->verificar_nivel;
-    datos_dificultad_nueva->verificacion_a_string = datos_dificultad_recibidos->verificacion_a_string;
-    datos_dificultad_nueva->calcular_puntaje = datos_dificultad_recibidos->calcular_puntaje;
-
-    nueva_dificultad->datos_dificultad = datos_dificultad_nueva;
-    nueva_dificultad->info_dificultad = informacion_dificultad_nueva;
-
-    lista_insertar(simulador->lista_dificultades, nueva_dificultad);
-
+    dificultad_nueva->info_dificultad = dificultad_nueva_info;
+    dificultad_nueva->datos_dificultad = dificultad_recibida;
+    
+    lista_insertar(simulador->lista_dificultades,dificultad_nueva);
+ 
     simulador->dificultad_siguiente_id_disponible++;
 
     return EXITO;
 }
 
 /*
-* PRE: Recibe un int* inicializado con el id de la dificultad a seleccionar.
-* POST: Selecciona la dificultad con el id recibido como activa. Devuelve -1 en caso de error(o si no existe la dificultad) o 0 en caso de exito.
+* PRE: Recibe un simulador y un puntero hacia un entero que contiene la dificultad a cambiar.
+* POST: Cambia la dificultad activa a la dificultad que se pasa por parametro.
 */
-int simulador_seleccionar_dificultad(simulador_t* simulador,void* datos){
+int simulador_seleccionar_dificultad(simulador_t* simulador, void* datos){
     if(!simulador || !datos){
         return ERROR;
     }
 
-    int id_dificultad_nueva = *(int*)datos;
-
-    dificultades_t* dificultad_buscada = buscar_dificultad_por_id(simulador->lista_dificultades, id_dificultad_nueva);
-    if(!dificultad_buscada){ //Si no encuentra la dificultad.
+    int dificultad_nueva = *(int*)datos;
+    dificultades_t* dificultad_buscada = buscar_dificultad_por_id(simulador->lista_dificultades, dificultad_nueva);
+    if(!dificultad_buscada){
         return ERROR;
     }
 
     dificultades_t* dificultad_actual = buscar_dificultad_actual(simulador->lista_dificultades);
-    if(!dificultad_actual){ //Si no hay dificultad activa.
+    if(!dificultad_actual){
         return ERROR;
     }
 
     dificultad_actual->info_dificultad->en_uso = false;
+
     dificultad_buscada->info_dificultad->en_uso = true;
 
     return EXITO;
 }
 
 /*
-* PRE: Recibe un InformacionDificultad* inicializado con el id de la dificultad a obtener.
-* POST: Llena la estructura con los datos de la dificultad obtenida o en caso de no existir pone el id en -1 y el nombre en NULL. Devuelve -1 en caso de error o 0 en caso de exito.
+* PRE: Recibe un simulador y una dificultad inicializada con el id.
+* POST: Llena la dificultad enviada por parametros con la informacion correcta. Si no existe cambia el ID a -1 y el nombre a NULL.
 */
-int simulador_obtener_informacion_dificultad(simulador_t* simulador,void* datos){
+int simulador_obtener_informacion_dificultad(simulador_t* simulador, void* datos){
     if(!simulador || !datos){
         return ERROR;
     }
 
-    InformacionDificultad* info_dificultad_recibida = (InformacionDificultad*)datos;
+    InformacionDificultad* dificultad_recibida = (InformacionDificultad*)datos;
 
-    dificultades_t* dificultad_seleccionada = buscar_dificultad_por_id(simulador->lista_dificultades,info_dificultad_recibida->id);
-    if(!dificultad_seleccionada){
-        info_dificultad_recibida->id = -1;
-        info_dificultad_recibida->nombre_dificultad = NULL;
+    dificultades_t* dificultad_buscada = buscar_dificultad_por_id(simulador->lista_dificultades, dificultad_recibida->id);
+    if(!dificultad_buscada){
+        dificultad_recibida->id = -1;
+        dificultad_recibida->nombre_dificultad = NULL;
         return ERROR;
     }
 
-    info_dificultad_recibida->en_uso = dificultad_seleccionada->info_dificultad->en_uso;
-    info_dificultad_recibida->nombre_dificultad = dificultad_seleccionada->datos_dificultad->nombre;
+    dificultad_recibida->en_uso = dificultad_buscada->info_dificultad->en_uso;
+    dificultad_recibida->nombre_dificultad = dificultad_buscada->info_dificultad->nombre_dificultad;
 
     return EXITO;
-}
+}   
 
 ResultadoSimulacion simulador_simular_evento(simulador_t* simulador, EventoSimulacion evento, void* datos){
-     if(!simulador || simulador->simulacion_finalizada){
+    if(!simulador || simulador->simulacion_finalizada){
         return ErrorSimulacion;
     }
 
@@ -906,9 +878,13 @@ void liberar_dificultades(lista_t* lista_dificultades){
             return;
         }
 
-        if(contador >= ID_DIFICULTAD_CUSTOM_INICIAL){ 
-            free((char*)(dificultad->info_dificultad->nombre_dificultad));
+        if(contador == 3){ //? A partir de 3 son las dificultades creadas de manera externa.
+            free(dificultad->info_dificultad);
+            free(dificultad);
+            lista_iterador_destruir(iterador);
+            return;
         }
+
         free(dificultad->info_dificultad);
         free(dificultad->datos_dificultad);
         free(dificultad);
@@ -924,13 +900,13 @@ void simulador_destruir(simulador_t* simulador){
     }
 
     heap_destruir(simulador->cola_espera);
+    hospital_destruir(simulador->hospital);
     liberar_dificultades(simulador->lista_dificultades);
     lista_destruir(simulador->lista_dificultades);
-    hospital_destruir(simulador->hospital);
 
-    free(simulador->informacion_pokemon_actual);
+    free(simulador->datos_dificultad);
+    free(simulador->intento_actual);
+    free(simulador->info_pokemon);
     free(simulador->estadisticas);
     free(simulador);
-
-    return;
 }
