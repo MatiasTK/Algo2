@@ -1,0 +1,46 @@
+Ej1: 4x^3 + 7x^2 + 12 Es O(x^3), eocntrar c y k
+->El que mas pesa es x3 en el infinito va a ser el que mas pesa
+
+Ej2: f(x) = x + 7 es O(x) encontrar c y k
+->x + 7 < k * x // T(n) < k * f(n) a partir desde algun n > n0
+Si k = 10
+Y N0 = 2 se demuestra -> N0 es c
+
+----------------------------------------------------------------
+_Iteraciones como for,while(anidadas -> for dentro de for) -> O(n)
+
+_Iteraciones consecutivas dos for NO anidados -> O(n^2) 
+
+for(...) -> n
+
+for(...) -> n
+
+for(...){ -> n * n + n
+    for(...){
+        suma += 1  -> n * n
+    }
+    suma +=1 -> n
+}
+
+return suma -> 1
+
+Instrucciones totales -> n + n + n*n + n + 1
+Big O -> O(n^2) -> Ya que es el mas grande en n*n
+
+_Condicionales -> Te quedas con el peor caso(Osea si tenes un else con un for)
+vas a suponer que entra en ese else y el algoritmo va a ser O(n)
+
+Justificacion: contar las instrucciones y decir que en el peor caso del if entra en x lugar
+----------------------------------------------------------------
+Teorema maestro -> Es para resolver recurrencias -> Solo si divide el problema
+Formula: T(n) = aT(n/b) + f(n)
+Ejemplo: funcion busqueda binaria
+a -> Cuantas veces llamo recursivamente a la funcion dentro de la funcion
+b -> En cuanto divido el problema -> en este caso 2
+f(n) ->es el resto 1 ya que es O(1) la busqueda binaria
+
+->El teorema maestro devuelve un Big Theta con reglas:
+1) f(n) < nlog(base b)^a -> T(n) = Tita(n^((log_b)^a))
+2) f(n) = nlog(base b)^a -> T(n) = Tita(n^((log_b)^a)l g n)
+3) f(n) > nlog(base b)^a -> T(n) = Tita(f(n))
+
