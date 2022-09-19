@@ -1,2 +1,0 @@
-1;lucas;charizard;20;rampardos;10;torkal;43;duskull;85
-2;valen;miltank;45;toxicroak;20;alcremie;65;shuckle;59
